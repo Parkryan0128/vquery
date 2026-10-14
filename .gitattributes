@@ -1,0 +1,2 @@
+# Preserve archived measurements and generated CSV line endings exactly.
+results/published/** -text
