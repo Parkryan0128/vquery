@@ -1,0 +1,349 @@
+{
+  "schema_version": 1,
+  "schedule_seed": 42,
+  "warmup": 3,
+  "repetitions": 15,
+  "defaults": {
+    "rows": 1000000,
+    "cutoff": 5000,
+    "groups": 1024,
+    "dim-rows": 100000,
+    "match-rate": "1.0",
+    "batch-size": 2048,
+    "threads": 1,
+    "seed": 42,
+    "memory-limit-mib": 4096
+  },
+  "cases": [
+    {
+      "query": "filter-sum",
+      "engine": "row-aos",
+      "cutoff": 0
+    },
+    {
+      "query": "filter-sum",
+      "engine": "row-aos",
+      "cutoff": 100
+    },
+    {
+      "query": "filter-sum",
+      "engine": "row-aos",
+      "cutoff": 1000
+    },
+    {
+      "query": "filter-sum",
+      "engine": "row-aos",
+      "cutoff": 5000
+    },
+    {
+      "query": "filter-sum",
+      "engine": "row-aos",
+      "cutoff": 10000
+    },
+    {
+      "query": "filter-sum",
+      "engine": "row-soa",
+      "cutoff": 0
+    },
+    {
+      "query": "filter-sum",
+      "engine": "row-soa",
+      "cutoff": 100
+    },
+    {
+      "query": "filter-sum",
+      "engine": "row-soa",
+      "cutoff": 1000
+    },
+    {
+      "query": "filter-sum",
+      "engine": "row-soa",
+      "cutoff": 5000
+    },
+    {
+      "query": "filter-sum",
+      "engine": "row-soa",
+      "cutoff": 10000
+    },
+    {
+      "query": "filter-sum",
+      "engine": "batch-soa",
+      "cutoff": 0
+    },
+    {
+      "query": "filter-sum",
+      "engine": "batch-soa",
+      "cutoff": 100
+    },
+    {
+      "query": "filter-sum",
+      "engine": "batch-soa",
+      "cutoff": 1000
+    },
+    {
+      "query": "filter-sum",
+      "engine": "batch-soa",
+      "cutoff": 5000
+    },
+    {
+      "query": "filter-sum",
+      "engine": "batch-soa",
+      "cutoff": 10000
+    },
+    {
+      "query": "join-group-sum",
+      "engine": "row-aos",
+      "dim-rows": 1000
+    },
+    {
+      "query": "join-group-sum",
+      "engine": "row-aos",
+      "dim-rows": 100000
+    },
+    {
+      "query": "join-group-sum",
+      "engine": "row-aos",
+      "dim-rows": 1000000
+    },
+    {
+      "query": "join-group-sum",
+      "engine": "row-aos",
+      "match-rate": "0.0"
+    },
+    {
+      "query": "join-group-sum",
+      "engine": "row-aos",
+      "match-rate": "0.5"
+    },
+    {
+      "query": "join-group-sum",
+      "engine": "row-aos",
+      "match-rate": "1.0"
+    },
+    {
+      "query": "group-sum",
+      "engine": "row-aos",
+      "distribution": "hot-key-90"
+    },
+    {
+      "query": "join-group-sum",
+      "engine": "row-aos",
+      "distribution": "hot-key-90"
+    },
+    {
+      "query": "join-group-sum",
+      "engine": "row-soa",
+      "dim-rows": 1000
+    },
+    {
+      "query": "join-group-sum",
+      "engine": "row-soa",
+      "dim-rows": 100000
+    },
+    {
+      "query": "join-group-sum",
+      "engine": "row-soa",
+      "dim-rows": 1000000
+    },
+    {
+      "query": "join-group-sum",
+      "engine": "row-soa",
+      "match-rate": "0.0"
+    },
+    {
+      "query": "join-group-sum",
+      "engine": "row-soa",
+      "match-rate": "0.5"
+    },
+    {
+      "query": "join-group-sum",
+      "engine": "row-soa",
+      "match-rate": "1.0"
+    },
+    {
+      "query": "group-sum",
+      "engine": "row-soa",
+      "distribution": "hot-key-90"
+    },
+    {
+      "query": "join-group-sum",
+      "engine": "row-soa",
+      "distribution": "hot-key-90"
+    },
+    {
+      "query": "join-group-sum",
+      "engine": "batch-soa",
+      "dim-rows": 1000
+    },
+    {
+      "query": "join-group-sum",
+      "engine": "batch-soa",
+      "dim-rows": 100000
+    },
+    {
+      "query": "join-group-sum",
+      "engine": "batch-soa",
+      "dim-rows": 1000000
+    },
+    {
+      "query": "join-group-sum",
+      "engine": "batch-soa",
+      "match-rate": "0.0"
+    },
+    {
+      "query": "join-group-sum",
+      "engine": "batch-soa",
+      "match-rate": "0.5"
+    },
+    {
+      "query": "join-group-sum",
+      "engine": "batch-soa",
+      "match-rate": "1.0"
+    },
+    {
+      "query": "group-sum",
+      "engine": "batch-soa",
+      "distribution": "hot-key-90"
+    },
+    {
+      "query": "join-group-sum",
+      "engine": "batch-soa",
+      "distribution": "hot-key-90"
+    },
+    {
+      "query": "filter-sum",
+      "engine": "batch-soa",
+      "batch-size": 256
+    },
+    {
+      "query": "filter-sum",
+      "engine": "batch-soa",
+      "batch-size": 512
+    },
+    {
+      "query": "filter-sum",
+      "engine": "batch-soa",
+      "batch-size": 1024
+    },
+    {
+      "query": "filter-sum",
+      "engine": "batch-soa",
+      "batch-size": 2048
+    },
+    {
+      "query": "filter-sum",
+      "engine": "batch-soa",
+      "batch-size": 4096
+    },
+    {
+      "query": "filter-sum",
+      "engine": "batch-soa",
+      "batch-size": 8192
+    },
+    {
+      "query": "group-sum",
+      "engine": "batch-soa",
+      "batch-size": 256
+    },
+    {
+      "query": "group-sum",
+      "engine": "batch-soa",
+      "batch-size": 512
+    },
+    {
+      "query": "group-sum",
+      "engine": "batch-soa",
+      "batch-size": 1024
+    },
+    {
+      "query": "group-sum",
+      "engine": "batch-soa",
+      "batch-size": 2048
+    },
+    {
+      "query": "group-sum",
+      "engine": "batch-soa",
+      "batch-size": 4096
+    },
+    {
+      "query": "group-sum",
+      "engine": "batch-soa",
+      "batch-size": 8192
+    },
+    {
+      "query": "join-group-sum",
+      "engine": "batch-soa",
+      "batch-size": 256
+    },
+    {
+      "query": "join-group-sum",
+      "engine": "batch-soa",
+      "batch-size": 512
+    },
+    {
+      "query": "join-group-sum",
+      "engine": "batch-soa",
+      "batch-size": 1024
+    },
+    {
+      "query": "join-group-sum",
+      "engine": "batch-soa",
+      "batch-size": 2048
+    },
+    {
+      "query": "join-group-sum",
+      "engine": "batch-soa",
+      "batch-size": 4096
+    },
+    {
+      "query": "join-group-sum",
+      "engine": "batch-soa",
+      "batch-size": 8192
+    },
+    {
+      "query": "group-sum",
+      "engine": "row-aos",
+      "groups": 1
+    },
+    {
+      "query": "group-sum",
+      "engine": "row-aos",
+      "groups": 1024
+    },
+    {
+      "query": "group-sum",
+      "engine": "row-aos",
+      "groups": 100000
+    },
+    {
+      "query": "group-sum",
+      "engine": "row-soa",
+      "groups": 1
+    },
+    {
+      "query": "group-sum",
+      "engine": "row-soa",
+      "groups": 1024
+    },
+    {
+      "query": "group-sum",
+      "engine": "row-soa",
+      "groups": 100000
+    },
+    {
+      "query": "group-sum",
+      "engine": "batch-soa",
+      "groups": 1
+    },
+    {
+      "query": "group-sum",
+      "engine": "batch-soa",
+      "groups": 1024
+    },
+    {
+      "query": "group-sum",
+      "engine": "batch-soa",
+      "groups": 100000
+    }
+  ]
+}

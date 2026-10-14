@@ -2,7 +2,9 @@
 
 VQuery is a single-machine, in-memory query engine for comparing **row-at-a-time execution with batch-at-a-time execution**. It implements filtering, aggregation, and hash joins, then measures how data layout, operator dispatch, hash tables, and parallel execution affect performance.
 
-**Status: design specification; implementation has not started.** The repository layout, APIs, commands, tests, and deliverables below describe the implementation contract. They are not claims of working software or measured performance. Place this README at the repository root and use it to guide implementation.
+**Status: executable MVP with parallel batch execution.** All three engines implement Q1–Q3, including a shared hash table, a managed memory budget, independent correctness tests, and a validated benchmark runner. Debug and Release builds are tested locally on macOS/ARM64; the CI workflow covers Linux Clang/GCC, ASan/UBSan, TSan, and macOS. See the workflow results for the current commit. The Linux performance study, profiling, plots, and v1.0 release report remain open; no speedup claim is made.
+
+Start with [build and run commands](#93-build-and-run), then read the contracts below. Frozen implementation choices are recorded in [docs/decisions.md](docs/decisions.md); the remaining measurement work is tracked in [docs/performance.md](docs/performance.md).
 
 ## 1. Goals and Deliverables
 
@@ -198,7 +200,7 @@ Dependencies flow from `app/bench` to `workload/execution/runtime`, then to `sto
 Both execution models use pull operators. Aggregation is a sink that consumes its input to completion. Share hash-table and aggregate-state code; keep row and batch processing loops separate.
 
 ```cpp
-// Interface sketch; these types are planned, not implemented.
+// Public execution interfaces (see include/vquery/execution/operators.hpp).
 struct RowSource {
     virtual ~RowSource() = default;
     virtual void open(ExecutionContext&) = 0;
@@ -213,7 +215,7 @@ struct BatchSource {
     virtual void close() noexcept = 0;
 };
 
-QueryResult execute(const QuerySpec&, const TableSet&, ExecutionContext&);
+QueryResult execute(QuerySpec, const Tables&, ExecutionContext&);
 ```
 
 - `false` from `next` means end of input. A successful batch call must return at least one logical row. Filter and Join skip empty intermediate batches internally.
@@ -302,53 +304,42 @@ Reject an allocation before exceeding the tracked limit. Catch allocation failur
 ```text
 vquery/
 ├── README.md
-├── CMakeLists.txt
-├── CMakePresets.json
-├── cmake/
-│   └── Dependencies.cmake       # Pinned test dependencies and archive hashes
+├── CMakeLists.txt / CMakePresets.json
+├── cmake/Dependencies.cmake     # GoogleTest version + archive SHA-256
 ├── include/vquery/
-│   ├── common/                 # Types, errors, results, budget, allocator
-│   ├── storage/                # AoS/SoA tables and views
-│   ├── execution/              # RowSource, BatchSource, aggregate sinks
-│   ├── hash/                   # Shared hash table
-│   ├── runtime/                # Context and worker coordination
-│   └── workload/               # QuerySpec and generator
+│   ├── common/                 # Types, errors, checksum, budget allocator
+│   ├── storage/tables.hpp      # AoS/SoA tables, fixtures, generator API
+│   ├── execution/operators.hpp # Row/batch sources and execute API
+│   ├── hash/hash_table.hpp     # Shared open-addressed hash table
+│   └── runtime/context.hpp     # Query spec, execution context, failure hooks
 ├── src/
-│   ├── common/
-│   ├── storage/
+│   ├── common/memory.cpp
+│   ├── storage/tables.cpp
 │   ├── execution/
-│   │   ├── row/                # Scan, Filter, Join, Aggregate
-│   │   └── batch/              # Scan, Filter, Join, Aggregate
-│   ├── hash/
-│   ├── runtime/
-│   └── workload/               # Generator and plan factory
-├── app/
-│   └── main.cpp                # vquery executable
+│   │   ├── operators.cpp       # Row/batch Scan, Filter, and Join
+│   │   └── execute.cpp         # Aggregate, build, worker coordination, merge
+│   └── workload/generator.cpp
+├── app/                        # CLI parsing, serialization, vquery entry point
 ├── bench/
-│   ├── main.cpp                # vquery_bench executable
-│   ├── runner.cpp              # Timing boundaries and result records
-│   └── manifests/              # Small JSON experiment configurations
+│   ├── main.cpp                # Timers, repetition, JSONL, atomic metadata
+│   └── manifests/              # smoke, core, sensitivity, parallel
 ├── tests/
-│   ├── unit/
-│   ├── differential/
-│   ├── reference/              # Independent result computation
-│   └── fixtures/
+│   ├── core_test.cpp           # Allocator, hash, generator, storage
+│   ├── execution_test.cpp      # Independent oracle and execution failures
+│   ├── cli_test.py             # Executables and full runner integration
+│   └── runner_test.py          # Corruption and whole-run exclusion
 ├── scripts/
-│   ├── run_bench.py            # Validation, run ordering, process control
-│   ├── summarize.py            # Raw JSONL to CSV and summaries
-│   └── profile_linux.sh        # perf collection
+│   ├── run_bench.py            # Full-output validation and run orchestration
+│   └── summarize.py            # Complete valid runs → JSON/CSV summaries
 ├── docs/
-│   ├── decisions.md            # Reasons for changes to this specification
-│   └── performance.md          # Methodology, plots, and interpretation
-├── results/
-│   ├── published/              # Selected raw data, metadata, summary CSV
-│   └── figures/                # Report plots
+│   ├── decisions.md
+│   └── performance.md          # Pending study plan; no measured claims yet
 └── .github/workflows/ci.yml
 ```
 
 The CLI, benchmark runner, and tests link the same `vquery_core` library. Exclude generated input data, build directories, temporary results, and large `perf.data` files from Git. Commit selected reproducibility artifacts and plots. Create modules as they become necessary rather than filling every directory with empty abstractions first.
 
-## 9. Toolchain and Planned Usage
+## 9. Toolchain and Usage
 
 ### 9.1 Tools and Platforms
 
@@ -367,9 +358,9 @@ Use `-O3 -DNDEBUG` consistently for Release. Leave LTO and host-specific ISA tun
 
 Use compiler vectorization reports to investigate SIMD. For Clang, relevant flags include `-Rpass=loop-vectorize` and `-Rpass-missed=loop-vectorize`. An optional comparison with automatic vectorization disabled must apply `-fno-vectorize -fno-slp-vectorize` to every engine in that build. [LLVM Auto-Vectorization](https://llvm.org/docs/Vectorizers.html).
 
-### 9.3 Commands to Implement
+### 9.3 Build and Run
 
-**These commands describe the planned interface. They are not runnable in the current documentation-only state.**
+Run these commands from the repository root. The first test-enabled configure downloads the pinned GoogleTest archive; C++ builds require no package-manager installation of GoogleTest. Python is needed for integration tests and benchmark orchestration. Use a new output directory for each run; existing results are never overwritten by the runner.
 
 ```bash
 cmake --preset debug
@@ -378,6 +369,11 @@ ctest --preset debug
 
 cmake --preset release
 cmake --build --preset release
+ctest --preset release
+
+# Fast end-to-end check: 15 configurations, no warmup/calibration, four samples.
+python3 scripts/run_bench.py --manifest bench/manifests/smoke.json \
+  --output-dir results/local/smoke --exploratory
 
 # Inspect results on a small input.
 ./build/release/vquery --query filter-sum --engine batch-soa \
@@ -394,6 +390,10 @@ python3 scripts/run_bench.py --manifest bench/manifests/core.json \
   --output-dir results/local/core
 python3 scripts/summarize.py --input-dir results/local/core
 ```
+
+`core.json` contains 27 comparison configurations. `sensitivity.json` contains one-variable sweeps with duplicate defaults removed by the runner. `parallel.json` covers 1/2/4 threads and requires enough detected physical cores for a publication run. Publication runs require a clean checkout, reconfigure/build/test the Release preset, and bind validation to both executable SHA-256 digests. `--exploratory` allows an existing custom build or dirty checkout and labels every resulting summary accordingly. A Debug smoke run adds `--build-dir build/debug`.
+
+For sanitizer builds, use the corresponding `asan-ubsan` or `tsan` configure/build/test preset. Run them separately. Some macOS sandbox environments cannot start sanitizer runtimes; Linux CI is the sanitizer validation environment for this project.
 
 Reject explicitly supplied options that do not apply. Row engines reject `threads>1` and any explicit `--batch-size`. Q1 rejects `--groups`, join options, and an explicit `--distribution`; Q2 rejects join options; Q3 rejects `--groups`. The orchestration script passes only applicable flags.
 
@@ -470,13 +470,15 @@ Measure **prepared input tables and a validated QuerySpec → an owned QueryResu
 
 | Included in query time | Excluded from query time |
 | --- | --- |
-| Plan construction and query-state creation | Input generation and bound validation |
+| Plan construction and query-state creation | Input generation and full value-bound validation |
 | Operator open and query-buffer allocation | Input layout generation/conversion |
 | Join build, including duplicate-key checks | Reference result computation |
 | Scan, Filter, Probe, and aggregation | Result sorting and correctness comparisons |
 | Hash growth and result materialization | Checksum calculation and serialization |
 | Worker startup, joins, and merging | JSON, console, and file output |
 | Intermediate-state and operator cleanup | Destruction of the returned result and input tables |
+
+The timed API also performs constant-time configuration, budget-identity, and column-length checks. Full fixture value validation occurs during preparation.
 
 Release intermediate execution state before returning from `execute`. Retain only the final result in the caller. Each invocation gets fresh query state; do not retain hash tables or operator buffers across repetitions. Input tables stay resident across repetitions in a process. The system allocator may reuse freed memory, so this is a steady-state allocation workload, not a cold-allocation experiment.
 
@@ -485,7 +487,7 @@ Read every result after timing, compute its checksum, and compare it when a vali
 ### 10.5 Repetition, Statistics, and Environment
 
 - Run three complete warmup queries, then collect 15 measured samples by default.
-- If the median warmup query time is positive and below 10 ms, choose K so its expected cumulative query time is at least 100 ms. Otherwise use K=1. A zero median is below measurement resolution and must be reported as an invalid timing configuration. Freeze K for the measured samples.
+- If the median warmup query time is positive and below 10 ms, choose K so its expected cumulative query time is at least 100 ms. Otherwise use K=1. A zero median is below measurement resolution and must be reported as an invalid timing configuration. Freeze K for the measured samples. To bound work on tiny inputs, reject K > 10,000 with guidance to increase N or use zero-warmup exploratory timing; do not silently reduce K.
 - A sample contains K separately timed `execute` calls. Sum their durations and divide by K. Result consumption, checking, and destruction happen after each call's timer stops. Record both K and the actual cumulative measured duration.
 - With zero warmups, use K=1 rather than running an undocumented calibration phase. Reject a zero-duration sample as below measurement resolution instead of dividing by zero.
 - Run each configuration in a fresh process. Randomize configuration order with a recorded scheduling seed and interleave engines where possible.
@@ -511,7 +513,7 @@ managed_query_peak_bytes, process_peak_rss_bytes, status, metadata_path
 
 Use `null` for inapplicable or unavailable fields. Represent checksums as fixed-width hexadecimal strings. `match_rate_bps` is the integer form of `--match-rate`; for example, 1.0 becomes 10000. For K>1, report the maximum query-buffer peak among the K invocations. RSS is a cumulative process high-water mark observed at that sample, not a resettable per-query peak.
 
-The JSON metadata referenced by `metadata_path` includes the fully resolved command/configuration, requested warmups and sample count, memory limit, calibration rule and chosen K, scheduling seed, validation-manifest reference, executable identities, environment, and run completion state. Keep workload identity separate from engine settings when matching comparison pairs. Do not pool measurements from different binaries, machines, or timing protocols.
+`metadata_path` is a filename relative to its raw JSONL file, so a result directory can be moved intact. Missing hardware/RSS information is recorded as `null`. The JSON metadata referenced by `metadata_path` includes the fully resolved command/configuration, requested warmups and sample count, memory limit, calibration rule and chosen K, scheduling seed, validation-manifest reference, executable identities, environment, and run completion state. Keep workload identity separate from engine settings when matching comparison pairs. Do not pool measurements from different binaries, machines, or timing protocols.
 
 A run is publishable only after all requested samples succeed, all expected checksums match, the output files close successfully, and metadata is finalized with `completion_state=complete` and `run_status=ok`. Finalize that metadata atomically after writing the raw samples. Any later failure invalidates earlier samples from the same run for publication; preserve them for diagnosis. A crash, truncated record, missing trial, duplicate trial, or unfinished metadata makes the run incomplete. `summarize.py` must exclude the entire failed/incomplete run rather than averaging its surviving successful samples. Unchecked standalone runs may receive a clearly labeled exploratory summary, but never enter the published comparison.
 
@@ -566,7 +568,7 @@ Complete milestones in order while preserving the previously validated execution
 | M6: Experiments and profiling | Defined matrix, profiling, SIMD inspection, raw-data preservation | Complete metadata; at least two bottleneck hypotheses assessed with evidence |
 | M7: Release documentation | Plots, performance report, verified commands, README status update | Clean-checkout reproduction and all v1.0 acceptance criteria met |
 
-**Start with M0 and M1.** Make one Q1 path work from input generation to output, then extend the contracts to other execution modes and operators.
+**Current implementation:** M0–M4 are implemented; M5 parallel execution and failure tests are implemented, with sanitizer acceptance determined by the current CI run. M6/M7 remain the next project work. Experiment manifests are available, but their presence does not mean the performance study has been completed.
 
 M4 includes the JSON output contract, validation manifests, and complete-run summary checks. M5 adds concurrent-failure and cancellation tests before any parallel performance measurements.
 

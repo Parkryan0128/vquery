@@ -1,0 +1,58 @@
+name: CI
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  linux:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [clang, gcc]
+        preset: [debug, release]
+    env:
+      CC: ${{ matrix.compiler == 'clang' && 'clang-18' || 'gcc-13' }}
+      CXX: ${{ matrix.compiler == 'clang' && 'clang++-18' || 'g++-13' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: cmake --preset ${{ matrix.preset }}
+      - run: cmake --build --preset ${{ matrix.preset }} --parallel 4
+      - run: ctest --preset ${{ matrix.preset }} --parallel 4
+  sanitizers:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        preset: [asan-ubsan, tsan]
+    env:
+      CC: clang-18
+      CXX: clang++-18
+      ASAN_OPTIONS: detect_leaks=1:halt_on_error=1
+      UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+      TSAN_OPTIONS: halt_on_error=1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      # LLVM 18 TSan needs a compatible address layout on these hosted runners.
+      - if: matrix.preset == 'tsan'
+        run: sudo sysctl vm.mmap_rnd_bits=28
+      - run: cmake --preset ${{ matrix.preset }}
+      - run: cmake --build --preset ${{ matrix.preset }} --parallel 4
+      - run: ctest --preset ${{ matrix.preset }} --parallel 4
+  macos:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: cmake --preset debug
+      - run: cmake --build --preset debug --parallel 4
+      - run: ctest --preset debug --parallel 4

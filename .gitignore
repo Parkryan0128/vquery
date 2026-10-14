@@ -1,0 +1,7 @@
+/build/
+/results/local/
+*.profraw
+*.profdata
+perf.data*
+__pycache__/
+.DS_Store
