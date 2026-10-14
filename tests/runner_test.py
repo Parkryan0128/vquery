@@ -11,7 +11,7 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from summarize import load_run, manifest_id, summarize
-from run_bench import ROOT, load_manifest, run, validation_controls
+from run_bench import ROOT, arguments, configuration, load_manifest, run, validation_controls
 from records import BUILD_FLAG_FIELDS, publication_build, result_counts
 
 
@@ -390,6 +390,34 @@ class Summaries(unittest.TestCase):
 
 
 class RunnerInput(unittest.TestCase):
+    def test_runner_rejects_a_valid_result_for_the_wrong_requested_input(self):
+        case = {"query": "filter-sum", "engine": "row-aos", "rows": 10}
+        payload = {"config": configuration(arguments({**case, "rows": 11}, {}))}
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            manifest = root / "manifest.json"
+            manifest.write_text(json.dumps({"schema_version": 1, "cases": [case]}))
+            args = Namespace(
+                manifest=manifest,
+                build_dir=ROOT / "build/debug",
+                output_dir=root / "results",
+                exploratory=True,
+            )
+            with (
+                patch(
+                    "run_bench.source_state", return_value={"revision": "c" * 40, "dirty": False}
+                ),
+                patch("run_bench.call", return_value=Namespace(stdout=json.dumps(payload))),
+                patch("run_bench.digest", return_value="a" * 64),
+                patch(
+                    "run_bench.build_environment", return_value={"hardware": {"physical_cores": 4}}
+                ),
+            ):
+                with self.assertRaisesRegex(ValueError, "configuration differs"):
+                    run(args)
+            self.assertFalse((args.output_dir / "validation.json").exists())
+            self.assertEqual(list(args.output_dir.glob("*.jsonl")), [])
+
     def test_publication_flag_policy_handles_quoted_and_indirect_flags(self):
         build = {
             "CMAKE_BUILD_TYPE": "Release",
@@ -462,6 +490,28 @@ class RunnerInput(unittest.TestCase):
             {**valid, "repetitons": 15},
             {**valid, "cases": [{"query": [], "engine": "row-aos"}]},
             {**valid, "defaults": {"rows": None}},
+            *(
+                {**valid, "defaults": {key: value}}
+                for key, value in (
+                    ("rows", 100_000_001),
+                    ("cutoff", 10001),
+                    ("memory-limit-mib", 0),
+                    ("seed", 1 << 64),
+                )
+            ),
+            *(
+                {
+                    **valid,
+                    "cases": [
+                        {"query": "join-group-sum", "engine": "batch-soa", "match-rate": rate}
+                    ],
+                }
+                for rate in ("1.0001", "0.12345", ".5", "1.", "1e-1", "nan", True)
+            ),
+            {**valid, "cases": [{"query": "join-group-sum", "engine": "batch-soa", "dim-rows": 0}]},
+            {**valid, "cases": [{"query": "group-sum", "engine": "batch-soa", "groups": 0}]},
+            {**valid, "cases": [{"query": "filter-sum", "engine": "batch-soa", "threads": 3}]},
+            {**valid, "cases": [{"query": "filter-sum", "engine": "batch-soa", "batch-size": 257}]},
         ]
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "manifest.json"

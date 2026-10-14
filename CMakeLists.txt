@@ -59,4 +59,6 @@ if(VQUERY_BUILD_TESTS)
     $<TARGET_FILE:vquery> $<TARGET_FILE:vquery_bench> ${googletest_SOURCE_DIR})
   add_test(NAME benchmark_runner_contracts
     COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/runner_test.py)
+  add_test(NAME performance_study_contracts
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/study_test.py)
 endif()

@@ -16,6 +16,7 @@ sys.argv = sys.argv[:1]
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 from summarize import load_run
+from run_bench import arguments, configuration
 
 
 def invoke(binary, *flags, success=True):
@@ -28,6 +29,65 @@ def invoke(binary, *flags, success=True):
 
 
 class Contracts(unittest.TestCase):
+    def test_benchmark_completion_stdout_failure_invalidates_run(self):
+        with tempfile.TemporaryDirectory() as directory, open(os.devnull, "rb") as output:
+            path = Path(directory) / "run.jsonl"
+            result = subprocess.run(
+                [
+                    str(BENCH),
+                    "--query",
+                    "filter-sum",
+                    "--engine",
+                    "batch-soa",
+                    "--rows",
+                    "0",
+                    "--warmup",
+                    "0",
+                    "--repetitions",
+                    "1",
+                    "--output",
+                    str(path),
+                ],
+                stdout=output,
+                stderr=subprocess.PIPE,
+                text=True,
+            )
+            self.assertNotEqual(result.returncode, 0)
+            self.assertEqual(json.loads(result.stderr)["status"], "output_failed")
+            meta = json.loads(Path(str(path) + ".meta.json").read_text())
+            self.assertEqual(meta["completed_samples"], 1)
+            self.assertEqual(meta["completion_state"], "failed")
+            self.assertEqual(meta["run_status"], "output_failed")
+            with self.assertRaisesRegex(ValueError, "failed"):
+                load_run(path, True)
+
+    def test_manifest_configuration_matches_executable_defaults_and_overrides(self):
+        flags = arguments({"query": "filter-sum", "engine": "batch-soa"}, {})
+        payload = json.loads(invoke(CLI, *flags, "--format", "json").stdout)
+        self.assertEqual(configuration(flags), payload["config"])
+        for query in ("filter-sum", "group-sum", "join-group-sum"):
+            for engine in ("row-aos", "row-soa", "batch-soa"):
+                for overrides in (
+                    {},
+                    {
+                        "cutoff": 0,
+                        "seed": str((1 << 64) - 1),
+                        "memory-limit-mib": 32,
+                        "groups": 7,
+                        "dim-rows": 13,
+                        "match-rate": "0.1234",
+                        "distribution": "hot-key-90",
+                        "batch-size": 8192,
+                        "threads": 4,
+                    },
+                ):
+                    with self.subTest(query=query, engine=engine, overrides=overrides):
+                        flags = arguments(
+                            {"query": query, "engine": engine}, {"rows": 0, **overrides}
+                        )
+                        payload = json.loads(invoke(CLI, *flags, "--format", "json").stdout)
+                        self.assertEqual(configuration(flags), payload["config"])
+
     def test_buffered_stdout_failure_is_reported(self):
         def deny_file_writes():
             signal.signal(signal.SIGXFSZ, signal.SIG_IGN)

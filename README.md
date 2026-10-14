@@ -102,7 +102,7 @@ src/workload/    Deterministic input generation
 src/execution/   Scan, filter, join, aggregation, workers, and merge
 app/             Query CLI and text/JSON output
 bench/           Query timing, calibration, and experiment manifests
-scripts/         Cross-engine validation, benchmark runs, and summaries
+scripts/         Cross-engine validation, benchmark runs, study analysis, and figures
 tests/           Correctness, ownership, concurrency, failure, and CLI tests
 docs/            Execution details, test coverage, and benchmark protocol
 ```

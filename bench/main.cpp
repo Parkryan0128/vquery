@@ -182,7 +182,9 @@ int run(const cli::Options &options) {
     }
     output.close();
     replace_metadata(metadata_path, metadata(options, id, "complete", "ok", completed, k, ""), id);
-    std::cout << "Wrote " << completed << " samples to " << output_path << '\n';
+    std::cout << "Wrote " << completed << " samples to " << output_path << '\n' << std::flush;
+    if (!std::cout)
+      throw Error(ErrorCode::output_failed, "benchmark output failed");
     return 0;
   } catch (...) {
     auto failure = std::current_exception();

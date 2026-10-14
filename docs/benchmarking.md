@@ -24,7 +24,7 @@ The checked-in manifests define the runnable cases. Sensitivity sweeps change on
 
 Publication candidates require a clean checkout and the `build/release` directory. The runner configures/builds Release and runs CTest with no-tests treated as an error. Publication checks inspect both compiler and executable-linker flags, including Release-specific flags. Sanitizers, coverage/instrumentation, profile-guided optimization, LTO, and indirect response-file flags require an exploratory run. Older publication metadata without all four flag fields is incomplete under this check; rerun the configuration to collect it. Exploratory runs can use a custom build or dirty tree; their summaries remain labeled accordingly.
 
-For each logical input, preflight compares complete sorted result arrays, input checksums, and result checksums from single-threaded `row-aos`, `row-soa`, and `batch-soa`. It also checks each requested batch/thread configuration. The independent oracle is used in small correctness tests; large preflight runs compare engines.
+For each logical input, preflight compares complete sorted result arrays, input checksums, and result checksums from single-threaded `row-aos`, `row-soa`, and `batch-soa`. It also checks each requested batch/thread configuration. Resolved output configurations must match the requested flags and CLI defaults; manifest bounds and match-rate syntax are checked before building or creating output. The independent oracle is used in small correctness tests; large preflight runs compare engines.
 
 `validation.json` records resolved configurations, observed row counts, checksums, source state, and SHA-256 identities of both executables. Its own SHA-256 digest is the validation ID. Binary/source state is checked before and after timing each configuration. Full result arrays are discarded before timing begins, and timed processes start fresh.
 
@@ -72,6 +72,8 @@ status, metadata_path
 Checksums are 16 lowercase hexadecimal digits; validation IDs are 64. Inapplicable fields are null. Match rates are integer basis points in records. Q3 samples leave `selected_rows` null to avoid another scan; preflight records that count. Q1/Q2 samples have null `joined_rows`. With K>1, query peak is the maximum among the K invocations.
 
 A summary rejects the entire run for failed/incomplete metadata, missing/extra/duplicate trials, invalid JSON or field types, inconsistent durations/configurations/counts, budget violations, stale identities, or disagreeing/missing controls. It continues inspecting other run files. A publication flag also requires clean-source, tested Release metadata, at least three warmups, and 15 samples. Exploratory results need `--include-exploratory` when summarized directly.
+
+The study reader in `scripts/study.py` also matches each suite's run configurations, warmup count, sample count, and schedule seed against its archived experiment manifest. Duplicate configurations, mixed hosts/builds, and core engine comparisons with different input settings are rejected. `scripts/plot_study.py` uses this validated data to regenerate figures; the validation tests do not require Matplotlib.
 
 ## Interpretation
 

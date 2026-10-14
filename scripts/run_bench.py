@@ -9,6 +9,7 @@ import os
 from pathlib import Path
 import platform
 import random
+import re
 import subprocess
 import sys
 
@@ -105,6 +106,36 @@ def validation_controls(flags):
         yield arguments(control, {})
 
 
+def configuration(flags):
+    """Resolve CLI defaults so archived results can be checked without a binary."""
+    options = dict(zip(flags[::2], flags[1::2]))
+    query, engine = options["--query"], options["--engine"]
+    group, join = query == "group-sum", query == "join-group-sum"
+    rate = options.get("--match-rate", "1")
+    if re.fullmatch(r"[01](?:\.[0-9]{1,4})?", rate) is None:
+        raise ValueError("match-rate must be 0..1 with at most four decimals")
+    whole, _, fraction = rate.partition(".")
+    bps = int(whole) * 10000 + int(fraction.ljust(4, "0"))
+    return config_record(
+        {
+            "query": query,
+            "engine": engine,
+            "rows": int(options.get("--rows", 1_000_000)),
+            "cutoff": int(options.get("--cutoff", 5000)),
+            "seed": int(options.get("--seed", 42)),
+            "groups": int(options.get("--groups", 1024)) if group else None,
+            "dim_rows": int(options.get("--dim-rows", 100_000)) if join else None,
+            "match_rate_bps": bps if join else None,
+            "distribution": options.get("--distribution", "uniform") if group or join else None,
+            "batch_size": int(options.get("--batch-size", 2048)) if engine == "batch-soa" else None,
+            "threads": int(options.get("--threads", 1)),
+            "memory_limit_bytes": int(options.get("--memory-limit-mib", 4096)) * 1024 * 1024,
+            "generator_version": 1,
+            "serialization_version": 1,
+        }
+    )
+
+
 def load_manifest(path):
     spec = read_record(path)
     integer(spec.get("schema_version"), "manifest schema_version", 1, 1)
@@ -126,7 +157,7 @@ def load_manifest(path):
     integer(spec.get("repetitions", 15), "repetitions", 1)
     integer(spec.get("schedule_seed", 42), "schedule_seed")
     for case in spec["cases"]:
-        arguments(case, defaults)
+        configuration(arguments(case, defaults))
     return spec
 
 
@@ -253,7 +284,8 @@ def run(args):
         payload = json.loads(
             call([binaries["vquery"], *flags, "--format", "json"], capture_output=True).stdout
         )
-        config_record(payload["config"])
+        if config_record(payload["config"]) != configuration(flags):
+            raise ValueError("executable configuration differs from requested case")
         key = semantic_key(payload["config"])
         if key in expected_by_input:
             previous = expected_by_input[key]
