@@ -22,7 +22,7 @@ The checked-in manifests define the runnable cases. Sensitivity sweeps change on
 
 ## Preflight
 
-Publication candidates require a clean checkout and the `build/release` directory. The runner configures/builds Release and runs CTest with no-tests treated as an error. Exploratory runs can use a custom build or dirty tree; their summaries remain labeled accordingly.
+Publication candidates require a clean checkout and the `build/release` directory. The runner configures/builds Release and runs CTest with no-tests treated as an error. Publication checks inspect both compiler and executable-linker flags, including Release-specific flags. Sanitizers, coverage/instrumentation, profile-guided optimization, LTO, and indirect response-file flags require an exploratory run. Older publication metadata without all four flag fields is incomplete under this check; rerun the configuration to collect it. Exploratory runs can use a custom build or dirty tree; their summaries remain labeled accordingly.
 
 For each logical input, preflight compares complete sorted result arrays, input checksums, and result checksums from single-threaded `row-aos`, `row-soa`, and `batch-soa`. It also checks each requested batch/thread configuration. The independent oracle is used in small correctness tests; large preflight runs compare engines.
 

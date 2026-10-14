@@ -2,10 +2,17 @@
 
 import json
 import re
+import shlex
 
 U64_MAX = (1 << 64) - 1
 ENGINES = ("row-aos", "row-soa", "batch-soa")
 QUERIES = ("filter-sum", "group-sum", "join-group-sum")
+BUILD_FLAG_FIELDS = (
+    "CMAKE_CXX_FLAGS",
+    "CMAKE_CXX_FLAGS_RELEASE",
+    "CMAKE_EXE_LINKER_FLAGS",
+    "CMAKE_EXE_LINKER_FLAGS_RELEASE",
+)
 CONFIG_FIELDS = {
     "query",
     "engine",
@@ -100,6 +107,37 @@ def config_record(config):
         if config[key] is not None:
             raise ValueError(f"inactive configuration field must be null: {key}")
     return config
+
+
+def publication_build(build):
+    object_record(build, "build configuration")
+    if (
+        build.get("CMAKE_BUILD_TYPE") != "Release"
+        or build.get("VQUERY_SANITIZER") != ""
+        or build.get("VQUERY_BUILD_TESTS") != "ON"
+    ):
+        raise ValueError("publication requires a tested Release build without sanitizers")
+    for field in BUILD_FLAG_FIELDS:
+        flags = build.get(field)
+        if not isinstance(flags, str):
+            raise ValueError(f"publication requires recorded build flags: {field}")
+        for flag in shlex.split(flags):
+            if flag in ("--coverage", "-pg", "-p") or flag.startswith(
+                (
+                    "-fsanitize",
+                    "-fprofile",
+                    "-fcs-profile",
+                    "-fauto-profile",
+                    "-fcoverage",
+                    "-ftest-coverage",
+                    "-finstrument-functions",
+                    "-flto",
+                    "@",
+                )
+            ):
+                raise ValueError(
+                    f"publication build contains diagnostic, profile, LTO, or indirect flags: {flag}"
+                )
 
 
 def semantic_key(config):

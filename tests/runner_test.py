@@ -6,11 +6,13 @@ from pathlib import Path
 import sys
 import tempfile
 import unittest
+from argparse import Namespace
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from summarize import load_run, manifest_id, summarize
-from run_bench import load_manifest, validation_controls
-from records import result_counts
+from run_bench import ROOT, load_manifest, run, validation_controls
+from records import BUILD_FLAG_FIELDS, publication_build, result_counts
 
 
 class Summaries(unittest.TestCase):
@@ -63,6 +65,7 @@ class Summaries(unittest.TestCase):
                     "CMAKE_BUILD_TYPE": "Release",
                     "VQUERY_SANITIZER": "",
                     "VQUERY_BUILD_TESTS": "ON",
+                    **dict.fromkeys(BUILD_FLAG_FIELDS, ""),
                 }
             },
             "config": config,
@@ -111,6 +114,42 @@ class Summaries(unittest.TestCase):
         self.meta["validation_id"] = self.manifest["validation_id"]
         for sample in self.samples:
             sample["validation_id"] = self.manifest["validation_id"]
+
+    def test_instrumented_build_flags_cannot_be_marked_publishable(self):
+        build = self.meta["environment"]["cmake"]
+        for key, value in (
+            ("CMAKE_CXX_FLAGS", "-fsanitize=address,undefined"),
+            ("CMAKE_CXX_FLAGS_RELEASE", "-O3 -fprofile-instr-generate -fcoverage-mapping"),
+            ("CMAKE_CXX_FLAGS_RELEASE", "-O3 --coverage"),
+            ("CMAKE_CXX_FLAGS_RELEASE", "-O3 -fprofile-use=training.profdata"),
+            ("CMAKE_CXX_FLAGS_RELEASE", "-O3 -flto=thin"),
+            ("CMAKE_EXE_LINKER_FLAGS", "-fsanitize=thread"),
+        ):
+            with self.subTest(key=key, value=value):
+                original = build[key]
+                build[key] = value
+                self.save()
+                with self.assertRaisesRegex(ValueError, "publication"):
+                    load_run(self.path, True)
+                build[key] = original
+
+    def test_publication_build_requires_complete_flag_metadata(self):
+        build = self.meta["environment"]["cmake"]
+        for key in BUILD_FLAG_FIELDS:
+            for value in (None, [], True):
+                with self.subTest(key=key, value=value):
+                    build[key] = value
+                    self.save()
+                    with self.assertRaisesRegex(ValueError, "publication"):
+                        load_run(self.path, True)
+                    build[key] = ""
+
+    def test_instrumented_builds_remain_available_for_exploration(self):
+        self.meta["environment"]["cmake"]["CMAKE_CXX_FLAGS"] = "-fsanitize=address"
+        self.meta["publication_eligible"] = False
+        self.save()
+        _, _, eligible = load_run(self.path, True)
+        self.assertFalse(eligible)
 
     def test_all_queries_can_be_summarized_with_validated_counts(self):
         original = copy.deepcopy((self.meta, self.samples, self.manifest))
@@ -351,6 +390,64 @@ class Summaries(unittest.TestCase):
 
 
 class RunnerInput(unittest.TestCase):
+    def test_publication_flag_policy_handles_quoted_and_indirect_flags(self):
+        build = {
+            "CMAKE_BUILD_TYPE": "Release",
+            "VQUERY_SANITIZER": "",
+            "VQUERY_BUILD_TESTS": "ON",
+            **dict.fromkeys(BUILD_FLAG_FIELDS, ""),
+        }
+        build["CMAKE_CXX_FLAGS"] = '-Wall -DNOTE="profile and coverage" -fno-omit-frame-pointer'
+        build["CMAKE_CXX_FLAGS_RELEASE"] = "-O3 -DNDEBUG"
+        publication_build(build)
+        for flag in (
+            "-fprofile-arcs",
+            "-fcs-profile-generate",
+            "-fauto-profile=data.afdo",
+            "-finstrument-functions",
+            "-pg",
+            "-ftest-coverage",
+            "@extra-flags.rsp",
+        ):
+            with self.subTest(flag=flag):
+                build["CMAKE_CXX_FLAGS_RELEASE"] = flag
+                with self.assertRaisesRegex(ValueError, "publication"):
+                    publication_build(build)
+
+    def test_runner_rejects_instrumentation_before_creating_results(self):
+        build = {
+            "CMAKE_BUILD_TYPE": "Release",
+            "VQUERY_SANITIZER": "",
+            "VQUERY_BUILD_TESTS": "ON",
+            **dict.fromkeys(BUILD_FLAG_FIELDS, ""),
+        }
+        build["CMAKE_CXX_FLAGS"] = "-fsanitize=undefined"
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            manifest = root / "manifest.json"
+            manifest.write_text(
+                json.dumps(
+                    {"schema_version": 1, "cases": [{"query": "filter-sum", "engine": "row-aos"}]}
+                )
+            )
+            args = Namespace(
+                manifest=manifest,
+                build_dir=ROOT / "build/release",
+                output_dir=root / "results",
+                exploratory=False,
+            )
+            with (
+                patch(
+                    "run_bench.source_state", return_value={"revision": "c" * 40, "dirty": False}
+                ),
+                patch("run_bench.call"),
+                patch("run_bench.digest", return_value="a" * 64),
+                patch("run_bench.build_environment", return_value={"cmake": build}),
+            ):
+                with self.assertRaisesRegex(ValueError, "publication"):
+                    run(args)
+            self.assertFalse(args.output_dir.exists())
+
     def test_invalid_manifest_is_rejected_before_work(self):
         valid = {"schema_version": 1, "cases": [{"query": "filter-sum", "engine": "row-aos"}]}
         cases = [

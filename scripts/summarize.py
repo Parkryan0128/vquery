@@ -17,6 +17,7 @@ from records import (
     hex_string,
     integer,
     object_record,
+    publication_build,
     read_record,
     result_counts,
     semantic_key,
@@ -198,14 +199,8 @@ def load_run(raw_path, include_exploratory=False):
     if eligible:
         environment = object_record(meta.get("environment"), "environment")
         build = object_record(environment.get("cmake"), "build configuration")
-        if (
-            meta["warmup"] < 3
-            or meta["requested_samples"] < 15
-            or meta["source"]["dirty"]
-            or build.get("CMAKE_BUILD_TYPE") != "Release"
-            or build.get("VQUERY_SANITIZER") != ""
-            or build.get("VQUERY_BUILD_TESTS") != "ON"
-        ):
+        publication_build(build)
+        if meta["warmup"] < 3 or meta["requested_samples"] < 15 or meta["source"]["dirty"]:
             raise ValueError("publication metadata does not satisfy the timing/build protocol")
     if not eligible and not include_exploratory:
         raise ValueError("exploratory run; use --include-exploratory to inspect")

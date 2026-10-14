@@ -2,7 +2,7 @@
 
 Run `cmake --preset debug`, `cmake --build --preset debug`, and `ctest --preset debug --parallel 4`. Repeat with `release`; use `asan-ubsan` and `tsan` separately on Linux. CTest fails if no tests are discovered.
 
-The suite currently has 38 GoogleTests and two Python suite entries. Those Python suites contain 13 executable/integration tests and 12 runner/record tests: 40 CTest entries, 63 named tests in total. Several tests iterate over configurations or failure positions; the entry count is not a count of every input examined.
+The suite currently has 38 GoogleTests and two Python suite entries. Those Python suites contain 13 executable/integration tests and 17 runner/record tests: 40 CTest entries, 68 named tests in total. Several tests iterate over configurations or failure positions; the entry count is not a count of every input examined.
 
 ## Contract coverage
 
@@ -17,7 +17,7 @@ The suite currently has 38 GoogleTests and two Python suite entries. Those Pytho
 | CLI | All queries/engines, JSON and text, help, supported rate syntax, maximum seed | Missing/duplicate/inapplicable flags, malformed/overflowing integers, invalid bounds/rates, memory exhaustion, failed stdout writes | `cli_test.py` |
 | Benchmark | All 15 smoke configurations, calibration, new files, metadata, escaped filenames | No overwrite, mismatched checksums, invalid validation tuple, initial budget failure, real file-write failure after earlier samples | `cli_test.py`, `benchmark_test.cpp` |
 | Calibration | Odd/even medians, K rounding, no-warmup path | 10 ms threshold, K=10000 and K>10000, zero duration, large durations without overflow | `benchmark_test.cpp` |
-| Runner and summaries | Full-output controls, all query record types, median/IQR, small exploratory summaries | Missing controls, parallel-only control, impossible counts/budget, stale manifests, wrong types, nonfinite/duplicate JSON, incomplete/failed/truncated runs, stale CSV removal | `runner_test.py`, `cli_test.py` |
+| Runner and summaries | Full-output controls, all query record types, median/IQR, small exploratory summaries | Missing controls, parallel-only control, impossible counts/budget, stale manifests, wrong types, nonfinite/duplicate JSON, incomplete/failed/truncated runs, stale CSV removal, instrumented build flags and incomplete flag metadata | `runner_test.py`, `cli_test.py` |
 
 Tests compare every result key/count/sum, not just checksums. The reference uses standard containers and a nested-loop join; it does not reuse engine hash/filter/aggregate code. The allocation sweep advances the failure point until a successful execution occurs for every query at 1/2/4 threads, checking cleanup after each attempt. Probability checks use fixed seeds and broad bounds, not timing or nondeterministic sampling.
 

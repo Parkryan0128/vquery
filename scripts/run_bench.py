@@ -13,7 +13,16 @@ import subprocess
 import sys
 
 from summarize import manifest_id, summarize
-from records import ENGINES, config_record, integer, object_record, read_record, semantic_key
+from records import (
+    BUILD_FLAG_FIELDS,
+    ENGINES,
+    config_record,
+    integer,
+    object_record,
+    publication_build,
+    read_record,
+    semantic_key,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 COMMON = {"rows", "cutoff", "seed", "threads", "memory-limit-mib"}
@@ -128,8 +137,7 @@ def build_environment(build):
         wanted = {
             "CMAKE_BUILD_TYPE",
             "CMAKE_CXX_COMPILER",
-            "CMAKE_CXX_FLAGS",
-            "CMAKE_CXX_FLAGS_RELEASE",
+            *BUILD_FLAG_FIELDS,
             "VQUERY_SANITIZER",
             "VQUERY_BUILD_TESTS",
         }
@@ -220,16 +228,10 @@ def run(args):
         "vquery_bench": args.build_dir / "vquery_bench",
     }
     identities = {name: digest(path) for name, path in binaries.items()}
-    args.output_dir.mkdir(parents=True, exist_ok=False)
     environment = build_environment(args.build_dir)
     if not args.exploratory:
-        build = environment["cmake"]
-        if (
-            build.get("CMAKE_BUILD_TYPE") != "Release"
-            or build.get("VQUERY_SANITIZER") != ""
-            or build.get("VQUERY_BUILD_TESTS") != "ON"
-        ):
-            raise ValueError("publication requires a tested Release build without sanitizers")
+        publication_build(environment["cmake"])
+    args.output_dir.mkdir(parents=True, exist_ok=False)
     defaults = spec.get("defaults", {})
     cases = []
     seen = set()
