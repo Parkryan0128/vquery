@@ -47,7 +47,7 @@ jobs:
       - run: cmake --build --preset ${{ matrix.preset }} --parallel 4
       - run: ctest --preset ${{ matrix.preset }} --parallel 4
   macos:
-    runs-on: macos-15
+    runs-on: macos-26
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

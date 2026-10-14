@@ -348,7 +348,7 @@ The CLI, benchmark runner, and tests link the same `vquery_core` library. Exclud
 - No external runtime dependency in the core engine.
 - Pin GoogleTest 1.17.0 and record the downloaded archive's SHA-256 in M0. Do not track a moving branch. [GoogleTest release](https://github.com/google/googletest/releases/tag/v1.17.0).
 - Use a dedicated `std::chrono::steady_clock` benchmark runner. Use Python 3.11 or newer and its standard library for orchestration and summaries; pin any plotting dependency when implementing the report.
-- Use Linux x86-64 for the main performance report, preferably with at least four physical cores and 16 GiB RAM. Support macOS/ARM64 for development and correctness checks; keep its performance results separate. Validate the chosen standard library's C++20 facilities, including `std::jthread`, in M0.
+- Use Linux x86-64 for the main performance report, preferably with at least four physical cores and 16 GiB RAM. Support macOS/ARM64 with a standard library providing `std::jthread` for development and correctness checks (CI uses macOS 26); keep its performance results separate. Validate the chosen standard library's C++20 facilities, including `std::jthread`, in M0.
 
 ### 9.2 Build Policy
 

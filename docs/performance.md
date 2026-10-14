@@ -2,6 +2,8 @@
 
 The execution and benchmark infrastructure is implemented. The controlled Linux study (M6) and final report (M7) are pending. No speedup or cache-effect claim is established by the correctness tests or smoke manifest.
 
+The initial macOS/ARM64 exploratory check completed all 27 core configurations with 3 warmups and 15 samples each, including input/output validation and calibrated repetition. This verifies the measurement workflow; these local runs are not the Linux study or a performance claim.
+
 ## Reproduction inputs
 
 Use a clean checkout, C++20 Clang 17+ or GCC 13+, CMake 3.25+, Ninja, and Python 3.11+. Run from the repository root. The runner builds and tests the Release preset before validating and timing publication candidates. Reserve a new output directory for every invocation.
