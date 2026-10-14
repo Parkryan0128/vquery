@@ -4,7 +4,7 @@ An in-memory query execution engine written in C++20.
 
 It runs filtering, aggregation, and hash joins one row at a time or in column batches. The three engines use the same input values and hash tables, so their results and execution costs can be compared. Batch execution also supports multiple threads.
 
-[Benchmark protocol](docs/benchmarking.md) · [Performance study status](docs/performance.md)
+[Performance results](docs/performance.md) · [Benchmark protocol](docs/benchmarking.md)
 
 ## How it works
 
@@ -38,6 +38,26 @@ The execution modes are:
 Comparing the two row engines isolates storage layout. Comparing `row-soa` with `batch-soa` includes dispatch, loop structure, and when values are loaded or copied. Batching does not by itself imply CPU SIMD.
 
 Batch Scan borrows column views. Filter keeps selection indices, and Join compacts matches into reusable output buffers. Grouped aggregation uses an open-addressed hash table with linear probing. Each parallel worker owns its pipeline and aggregate state; the join table is built once and shared for reads.
+
+## Measured results
+
+On an Apple M5 with 24 GiB RAM, the single-thread batch engine was **1.41–1.58× faster than `row-soa`** for the three default queries at one million facts. Release build, Apple Clang 17, batch size 2048, cutoff 5000, seed 42; medians of 15 samples after three warmups:
+
+| Query | `row-aos` | `row-soa` | `batch-soa` | Batch speedup vs `row-soa` |
+| --- | ---: | ---: | ---: | ---: |
+| Filter + sum | 4.512 ms | 4.146 ms | 2.702 ms | 1.53× |
+| Group by + sum | 8.521 ms | 6.704 ms | 4.762 ms | 1.41× |
+| Join + group by | 9.767 ms | 9.561 ms | 6.055 ms | 1.58× |
+
+![Query latency across input sizes, with median and IQR](docs/figures/core-latency.png)
+
+At ten million facts, four batch workers achieved **2.75–3.65× speedup** over one worker across the three queries and two measurement passes. At ten thousand facts, four workers made filter and group aggregation slower. Each execution includes worker creation, merging, and the join's serial build.
+
+![Parallel speedup at four input sizes](docs/figures/parallel.png)
+
+The study contains **201 runs and 3,015 samples**, including selectivity, cardinality, skew, join-size, batch-size, seed, and repeat checks. Four runs exceeded 10% IQR/median and are retained and identified in the report. These results describe one macOS desktop; Linux replication and hardware-counter attribution remain future work.
+
+[Results and bottleneck analysis](docs/performance.md) · [Raw data and environment](results/published/apple-m5-2026-10-14) · [Figure generation](scripts/plot_study.py)
 
 ## Usage
 
@@ -149,7 +169,7 @@ The runner builds and tests Release, compares complete outputs across engines, a
 
 Each run needs a new output directory. Raw samples, metadata, validation records, and summaries are kept together. A failed or incomplete run is excluded as a whole. Debug, sanitizer, coverage, and other diagnostic builds can be inspected with `--exploratory` and are excluded from publication comparisons.
 
-The execution engine and benchmark workflow are implemented. The controlled Linux performance study, profiling, and final report are still pending; this repository does not yet establish a speedup claim.
+The published [Apple M5 study](docs/performance.md) includes the complete measurement bundles, compiler diagnostics, sampled stacks, limitations, and commands to repeat the study or regenerate the figures.
 
 ## Contact
 

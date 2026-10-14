@@ -51,7 +51,7 @@ A validation ID is SHA-256 of the manifest excluding `validation_id`, encoded us
 - A tiny warmup can request excessive repetition. Fail when K > 10000 instead of capping K silently. Zero warmups select K=1 for smoke/exploratory runs.
 - Raw metadata references are relative filenames so runs remain valid after moving a complete directory. Raw files are created exclusively; completion metadata is replaced atomically after successful close. This is crash-detection metadata, not an fsync-based durability guarantee.
 - Unknown hardware properties are null. Parallel publication requires a detected physical-core budget; exploratory checks can still run on a restricted machine.
-- Linux is the performance-study and sanitizer validation platform. macOS/ARM64 is supported for development. Local sandbox restrictions may prevent sanitizer runtime startup; this is not a passing sanitizer result.
+- The first published performance study uses the available Apple M5/macOS host. Linux GCC/Clang and sanitizers are validated in CI; Linux performance replication is separate future work. Results are scoped to their recorded platform. Local sandbox restrictions may prevent sanitizer runtime startup; this is not a passing sanitizer result.
 - macOS CI uses the [macOS 26 ARM64 runner](https://github.com/actions/runner-images#available-images). The macOS 15 image failed the `std::jthread` configure probe even with Apple Clang 17, so compiler version alone is not a sufficient compatibility check. Keep the probe enabled.
 
 ## Review follow-up

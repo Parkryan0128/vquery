@@ -1,0 +1,76 @@
+[
+  {
+    "name": "filter-row-soa",
+    "command": [
+      "<repo>/build/release/vquery_bench",
+      "--query",
+      "filter-sum",
+      "--engine",
+      "row-soa",
+      "--rows",
+      "1000000",
+      "--cutoff",
+      "5000",
+      "--warmup",
+      "3",
+      "--repetitions",
+      "75",
+      "--output",
+      "<diagnostic-output>/filter-row-soa.jsonl"
+    ],
+    "sample_seconds": 3,
+    "sample_interval_ms": 1,
+    "attach_delay_seconds": 2,
+    "scope": "Whole-process stacks after delayed attachment; may include validation, allocation, and result destruction. Not execution-only percentages or primary timing data."
+  },
+  {
+    "name": "filter-batch-soa",
+    "command": [
+      "<repo>/build/release/vquery_bench",
+      "--query",
+      "filter-sum",
+      "--engine",
+      "batch-soa",
+      "--rows",
+      "1000000",
+      "--cutoff",
+      "5000",
+      "--warmup",
+      "3",
+      "--repetitions",
+      "75",
+      "--output",
+      "<diagnostic-output>/filter-batch-soa.jsonl"
+    ],
+    "sample_seconds": 3,
+    "sample_interval_ms": 1,
+    "attach_delay_seconds": 2,
+    "scope": "Whole-process stacks after delayed attachment; may include validation, allocation, and result destruction. Not execution-only percentages or primary timing data."
+  },
+  {
+    "name": "large-join-batch-soa",
+    "command": [
+      "<repo>/build/release/vquery_bench",
+      "--query",
+      "join-group-sum",
+      "--engine",
+      "batch-soa",
+      "--rows",
+      "1000000",
+      "--cutoff",
+      "5000",
+      "--warmup",
+      "3",
+      "--repetitions",
+      "600",
+      "--output",
+      "<diagnostic-output>/large-join-batch-soa.jsonl",
+      "--dim-rows",
+      "1000000"
+    ],
+    "sample_seconds": 3,
+    "sample_interval_ms": 1,
+    "attach_delay_seconds": 2,
+    "scope": "Whole-process stacks after delayed attachment; may include validation, allocation, and result destruction. Not execution-only percentages or primary timing data."
+  }
+]

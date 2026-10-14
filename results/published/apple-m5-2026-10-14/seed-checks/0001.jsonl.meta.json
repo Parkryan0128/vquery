@@ -1,0 +1,84 @@
+{
+  "binaries": {
+    "vquery": "2e5efec75b91ad8057fe79e1012624930a42c0ab6c4ecc091e23ca2ffa5e25e2",
+    "vquery_bench": "9da693942dc99e321d26b29ce4b4972440b0cfdde64e01119af4e82b221b6c6b"
+  },
+  "calibration": "median warmup; below 10ms target 100ms; max K=10000",
+  "clock": {
+    "period_den": 1000000000,
+    "period_num": 1,
+    "steady": true
+  },
+  "compiler": "Apple LLVM 17.0.0 (clang-1700.3.19.1)",
+  "completed_samples": 15,
+  "completion_state": "complete",
+  "config": {
+    "batch_size": null,
+    "cutoff": 5000,
+    "dim_rows": null,
+    "distribution": null,
+    "engine": "row-aos",
+    "generator_version": 1,
+    "groups": null,
+    "match_rate_bps": null,
+    "memory_limit_bytes": 4294967296,
+    "query": "filter-sum",
+    "rows": 1000000,
+    "seed": 7,
+    "serialization_version": 1,
+    "threads": 1
+  },
+  "customer_row_bytes": 8,
+  "environment": {
+    "affinity": null,
+    "cmake": {
+      "CMAKE_BUILD_TYPE": "Release",
+      "CMAKE_CXX_COMPILER": "/usr/bin/c++",
+      "CMAKE_CXX_FLAGS": "",
+      "CMAKE_CXX_FLAGS_RELEASE": "-O3 -DNDEBUG",
+      "CMAKE_EXE_LINKER_FLAGS": "",
+      "CMAKE_EXE_LINKER_FLAGS_RELEASE": "",
+      "VQUERY_BUILD_TESTS": "ON",
+      "VQUERY_SANITIZER": ""
+    },
+    "compiler_version": "Apple clang version 17.0.0 (clang-1700.3.19.1)\nTarget: arm64-apple-darwin25.6.0\nThread model: posix\nInstalledDir: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin\n",
+    "cpu": "arm",
+    "hardware": {
+      "cache_description": {
+        "hw.l1dcachesize": "65536",
+        "hw.l1icachesize": "131072",
+        "hw.l2cachesize": "6291456",
+        "hw.l3cachesize": ""
+      },
+      "cpu_model": "Apple M5",
+      "memory_bytes": 25769803776,
+      "physical_cores": 10
+    },
+    "logical_cpus": 10,
+    "machine": "arm64",
+    "platform": "macOS-26.6-arm64-arm-64bit-Mach-O",
+    "timestamp_utc": "2026-10-14T19:04:24.670875+00:00"
+  },
+  "error": null,
+  "fact_row_bytes": 24,
+  "observations": {
+    "joined_rows": null,
+    "selected_rows": 500295
+  },
+  "publication_eligible": true,
+  "repetitions_in_sample": 22,
+  "requested_samples": 15,
+  "run_id": "1792004691202492000-26724",
+  "run_status": "ok",
+  "schedule_seed": 42,
+  "schema_version": 1,
+  "source": {
+    "dirty": false,
+    "revision": "f0615a6c5d3c2f8f65741608b0ec9690d0a6c612"
+  },
+  "standard_library": "libc++ 200100",
+  "validation_id": "b095ac542dfca254d6d2224ec34fd61c34a3792de7b24a1fbfc589c049ce940b",
+  "validation_manifest": "validation.json",
+  "validation_status": "checksums_matched",
+  "warmup": 3
+}

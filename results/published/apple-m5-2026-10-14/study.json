@@ -1,0 +1,74 @@
+{
+  "scope": "Single macOS desktop study, not an isolated Linux server experiment.",
+  "cpu": "Apple M5",
+  "physical_cores": 10,
+  "performance_cores": 4,
+  "efficiency_cores": 6,
+  "memory_bytes": 25769803776,
+  "power": "AC throughout the collection; low power mode off.",
+  "affinity": "OS scheduler; no core pinning or P/E-core assignment.",
+  "background": "Desktop apps remained open; a two-snapshot preflight showed 93.92% aggregate CPU idle. No other benchmark or build jobs were deliberately run concurrently.",
+  "memory": "Existing memory compression was present before collection; memory_pressure -Q reported 52\u201353% system-wide memory free during the suites.",
+  "vm_counter_delta": {
+    "Pageouts": 1567,
+    "Swapins": 0,
+    "Swapouts": 0
+  },
+  "thermal": "pmset -g therm reported no thermal or performance warning before and after each suite; this is not a temperature trace.",
+  "pmu": "Hardware branch/cache counters and exact CPU frequencies were not collected.",
+  "started_utc": "2026-10-14T19:00:58.173503+00:00",
+  "finished_utc": "2026-10-14T19:06:38.945452+00:00",
+  "suite_order": [
+    "core",
+    "sensitivity",
+    "parallel",
+    "parallel-small",
+    "seed-checks",
+    "join-build",
+    "core-repeat",
+    "parallel-repeat"
+  ],
+  "original_source_revision": "f0615a6c5d3c2f8f65741608b0ec9690d0a6c612",
+  "suites": [
+    {
+      "name": "core",
+      "runs": 27,
+      "manifest_sha256": "818aa8e2975b41e872977df42a4a6a95e6788a8bd0291a87c65caed2bb0e7cdf"
+    },
+    {
+      "name": "sensitivity",
+      "runs": 60,
+      "manifest_sha256": "cc7a4e3076011a65ce5e6fb33e5e96be46e72002e7c56d6e91fdb6c02f28ee41"
+    },
+    {
+      "name": "parallel",
+      "runs": 9,
+      "manifest_sha256": "f566702cb1cbad9cb5572ea79edc7a4b1e24c4f92f5cf07af00c97c9db6d39f1"
+    },
+    {
+      "name": "parallel-small",
+      "runs": 27,
+      "manifest_sha256": "a5bd58fe35af2e361e4b64a8fd78b4efa765c4e9517b444f04490f56371affff"
+    },
+    {
+      "name": "seed-checks",
+      "runs": 30,
+      "manifest_sha256": "8c8621054f1dd7524ecf28d0c799007ec447caa61a1cad7ba29a3f08306c9e49"
+    },
+    {
+      "name": "join-build",
+      "runs": 12,
+      "manifest_sha256": "b3aecc067b006833cd02d3433e62f4ae9f970d478a2db90c5134730daa618684"
+    },
+    {
+      "name": "core-repeat",
+      "runs": 27,
+      "manifest_sha256": "64780d5a0c90e26f117def1bee65e92aa7a122251977d970c51729739dab8832"
+    },
+    {
+      "name": "parallel-repeat",
+      "runs": 9,
+      "manifest_sha256": "5c6ed8c4155843a0dae8dec067f3b14b79dca3afc29143887e0f0fc420d9dd6b"
+    }
+  ]
+}

@@ -1,0 +1,481 @@
+In file included from <repo>/src/execution/execute.cpp:1:
+In file included from <repo>/include/vquery/execution/operators.hpp:2:
+<repo>/include/vquery/hash/hash_table.hpp:29:13: remark: loop not vectorized: loop contains a switch statement [-Rpass-analysis=loop-vectorize]
+   29 |       cap = doubled(cap);
+      |             ^
+<repo>/src/execution/execute.cpp:140:13: note: could not determine the original source location for include/vquery/hash/hash_table.hpp:0:0
+  140 | QueryResult execute(QuerySpec q, const Tables &tables, ExecutionContext &context) {
+      |             ^
+<repo>/src/execution/execute.cpp:140:13: remark: loop not vectorized: value that could not be identified as reduction is used outside the loop [-Rpass-analysis=loop-vectorize]
+  140 | QueryResult execute(QuerySpec q, const Tables &tables, ExecutionContext &context) {
+      |             ^
+<repo>/src/execution/execute.cpp:140:13: note: could not determine the original source location for include/vquery/hash/hash_table.hpp:0:0
+In file included from <repo>/src/execution/execute.cpp:1:
+In file included from <repo>/include/vquery/execution/operators.hpp:2:
+<repo>/include/vquery/hash/hash_table.hpp:28:5: remark: loop not vectorized: could not determine number of loop iterations [-Rpass-analysis=loop-vectorize]
+   28 |     while (entries > load_limit(cap))
+      |     ^
+<repo>/include/vquery/hash/hash_table.hpp:28:5: remark: loop not vectorized: could not determine number of loop iterations [-Rpass-analysis=loop-vectorize]
+<repo>/include/vquery/hash/hash_table.hpp:28:5: remark: loop not vectorized [-Rpass-missed=loop-vectorize]
+<repo>/src/execution/execute.cpp:89:29: remark: loop not vectorized: loop contains a switch statement [-Rpass-analysis=loop-vectorize]
+   89 |       const auto r = tables.customer(i);
+      |                             ^
+<repo>/src/execution/execute.cpp:88:5: remark: loop not vectorized: instruction cannot be vectorized [-Rpass-analysis=loop-vectorize]
+   88 |     for (std::size_t i = 0; i < tables.customer_count; ++i) {
+      |     ^
+<repo>/src/execution/execute.cpp:88:5: remark: loop not vectorized: could not determine number of loop iterations [-Rpass-analysis=loop-vectorize]
+<repo>/src/execution/execute.cpp:88:5: remark: loop not vectorized [-Rpass-missed=loop-vectorize]
+In file included from <repo>/src/execution/execute.cpp:1:
+In file included from <repo>/include/vquery/execution/operators.hpp:2:
+In file included from <repo>/include/vquery/hash/hash_table.hpp:2:
+In file included from <repo>/include/vquery/common/checksum.hpp:4:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/iomanip:556:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/deque:2647:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/functional:553:
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__functional/function.h:436:12: remark: loop not vectorized: loop contains a switch statement [-Rpass-analysis=loop-vectorize]
+  436 |     return (*__f_)(std::forward<_ArgTypes>(__args)...);
+      |            ^
+<repo>/src/execution/execute.cpp:103:5: remark: loop not vectorized: value that could not be identified as reduction is used outside the loop [-Rpass-analysis=loop-vectorize]
+  103 |     for (unsigned i = 0; i < context.threads; ++i) {
+      |     ^
+<repo>/src/execution/execute.cpp:103:5: remark: loop not vectorized: instruction cannot be vectorized [-Rpass-analysis=loop-vectorize]
+<repo>/src/execution/execute.cpp:103:5: remark: loop not vectorized: could not determine number of loop iterations [-Rpass-analysis=loop-vectorize]
+<repo>/src/execution/execute.cpp:103:5: remark: loop not vectorized [-Rpass-missed=loop-vectorize]
+In file included from <repo>/src/execution/execute.cpp:6:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/thread:100:
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__thread/jthread.h:96:49: remark: loop not vectorized: loop contains a switch statement [-Rpass-analysis=loop-vectorize]
+   96 |   _LIBCPP_HIDE_FROM_ABI void join() { __thread_.join(); }
+      |                                                 ^
+<repo>/src/execution/execute.cpp:123:5: remark: loop not vectorized: could not determine number of loop iterations [-Rpass-analysis=loop-vectorize]
+  123 |     for (auto &w : workers)
+      |     ^
+<repo>/src/execution/execute.cpp:123:5: remark: loop not vectorized: could not determine number of loop iterations [-Rpass-analysis=loop-vectorize]
+<repo>/src/execution/execute.cpp:123:5: remark: loop not vectorized [-Rpass-missed=loop-vectorize]
+In file included from <repo>/src/execution/execute.cpp:6:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/thread:100:
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__thread/jthread.h:96:49: remark: loop not vectorized: loop contains a switch statement [-Rpass-analysis=loop-vectorize]
+   96 |   _LIBCPP_HIDE_FROM_ABI void join() { __thread_.join(); }
+      |                                                 ^
+<repo>/src/execution/execute.cpp:127:3: remark: loop not vectorized: could not determine number of loop iterations [-Rpass-analysis=loop-vectorize]
+  127 |   for (auto &w : workers)
+      |   ^
+<repo>/src/execution/execute.cpp:127:3: remark: loop not vectorized: could not determine number of loop iterations [-Rpass-analysis=loop-vectorize]
+<repo>/src/execution/execute.cpp:127:3: remark: loop not vectorized [-Rpass-missed=loop-vectorize]
+<repo>/src/execution/execute.cpp:129:3: remark: loop not vectorized: could not determine number of loop iterations [-Rpass-analysis=loop-vectorize]
+  129 |   for (unsigned i = 0; i < context.threads; ++i)
+      |   ^
+<repo>/src/execution/execute.cpp:129:3: remark: loop not vectorized [-Rpass-missed=loop-vectorize]
+In file included from <repo>/src/execution/execute.cpp:1:
+In file included from <repo>/include/vquery/execution/operators.hpp:2:
+<repo>/include/vquery/hash/hash_table.hpp:75:5: remark: loop not vectorized: value that could not be identified as reduction is used outside the loop [-Rpass-analysis=loop-vectorize]
+   75 |     while (occupied_[slot] && keys_[slot] != key)
+      |     ^
+<repo>/include/vquery/hash/hash_table.hpp:75:5: remark: loop not vectorized: could not determine number of loop iterations [-Rpass-analysis=loop-vectorize]
+<repo>/include/vquery/hash/hash_table.hpp:75:5: remark: loop not vectorized: could not determine number of loop iterations [-Rpass-analysis=loop-vectorize]
+<repo>/include/vquery/hash/hash_table.hpp:75:5: remark: loop not vectorized [-Rpass-missed=loop-vectorize]
+<repo>/include/vquery/hash/hash_table.hpp:75:5: remark: loop not vectorized: value that could not be identified as reduction is used outside the loop [-Rpass-analysis=loop-vectorize]
+<repo>/include/vquery/hash/hash_table.hpp:75:5: remark: loop not vectorized: could not determine number of loop iterations [-Rpass-analysis=loop-vectorize]
+<repo>/include/vquery/hash/hash_table.hpp:75:5: remark: loop not vectorized: could not determine number of loop iterations [-Rpass-analysis=loop-vectorize]
+<repo>/include/vquery/hash/hash_table.hpp:75:5: remark: loop not vectorized [-Rpass-missed=loop-vectorize]
+In file included from <repo>/src/execution/execute.cpp:6:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/thread:100:
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__thread/jthread.h:63:9: remark: loop not vectorized: control flow cannot be substituted for a select [-Rpass-analysis=loop-vectorize]
+   63 |     if (joinable()) {
+      |         ^
+In file included from <repo>/src/execution/execute.cpp:1:
+In file included from <repo>/include/vquery/execution/operators.hpp:3:
+In file included from <repo>/include/vquery/runtime/context.hpp:4:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/stop_token:43:
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__stop_token/stop_source.h:77:85: remark: loop not vectorized: call instruction cannot be vectorized [-Rpass-analysis=loop-vectorize]
+   77 |   _LIBCPP_HIDE_FROM_ABI bool request_stop() noexcept { return __state_ && __state_->__request_stop(); }
+      |                                                                                     ^
+In file included from <repo>/src/execution/execute.cpp:6:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/thread:100:
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__thread/jthread.h:63:9: remark: loop not vectorized: could not determine number of loop iterations [-Rpass-analysis=loop-vectorize]
+   63 |     if (joinable()) {
+      |         ^
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__thread/jthread.h:63:9: remark: loop not vectorized: could not determine number of loop iterations [-Rpass-analysis=loop-vectorize]
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__thread/jthread.h:63:9: remark: loop not vectorized [-Rpass-missed=loop-vectorize]
+In file included from <repo>/src/execution/execute.cpp:1:
+In file included from <repo>/include/vquery/execution/operators.hpp:2:
+<repo>/include/vquery/hash/hash_table.hpp:75:5: remark: loop not vectorized: value that could not be identified as reduction is used outside the loop [-Rpass-analysis=loop-vectorize]
+   75 |     while (occupied_[slot] && keys_[slot] != key)
+      |     ^
+<repo>/include/vquery/hash/hash_table.hpp:75:5: remark: loop not vectorized: could not determine number of loop iterations [-Rpass-analysis=loop-vectorize]
+<repo>/include/vquery/hash/hash_table.hpp:75:5: remark: loop not vectorized: could not determine number of loop iterations [-Rpass-analysis=loop-vectorize]
+<repo>/include/vquery/hash/hash_table.hpp:75:5: remark: loop not vectorized [-Rpass-missed=loop-vectorize]
+<repo>/src/execution/execute.cpp:66:20: remark: loop not vectorized: loop contains a switch statement [-Rpass-analysis=loop-vectorize]
+   66 |     while (source->next(row))
+      |                    ^
+<repo>/src/execution/execute.cpp:66:5: remark: loop not vectorized: loop induction variable could not be identified [-Rpass-analysis=loop-vectorize]
+   66 |     while (source->next(row))
+      |     ^
+<repo>/src/execution/execute.cpp:66:5: remark: loop not vectorized: could not determine number of loop iterations [-Rpass-analysis=loop-vectorize]
+<repo>/src/execution/execute.cpp:66:5: remark: loop not vectorized: could not determine number of loop iterations [-Rpass-analysis=loop-vectorize]
+<repo>/src/execution/execute.cpp:66:5: remark: loop not vectorized [-Rpass-missed=loop-vectorize]
+In file included from <repo>/src/execution/execute.cpp:1:
+In file included from <repo>/include/vquery/execution/operators.hpp:2:
+<repo>/include/vquery/hash/hash_table.hpp:75:5: remark: loop not vectorized: value that could not be identified as reduction is used outside the loop [-Rpass-analysis=loop-vectorize]
+   75 |     while (occupied_[slot] && keys_[slot] != key)
+      |     ^
+<repo>/include/vquery/hash/hash_table.hpp:75:5: remark: loop not vectorized: could not determine number of loop iterations [-Rpass-analysis=loop-vectorize]
+<repo>/include/vquery/hash/hash_table.hpp:75:5: remark: loop not vectorized: could not determine number of loop iterations [-Rpass-analysis=loop-vectorize]
+<repo>/include/vquery/hash/hash_table.hpp:75:5: remark: loop not vectorized [-Rpass-missed=loop-vectorize]
+<repo>/include/vquery/hash/hash_table.hpp:75:5: remark: loop not vectorized: value that could not be identified as reduction is used outside the loop [-Rpass-analysis=loop-vectorize]
+<repo>/include/vquery/hash/hash_table.hpp:75:5: remark: loop not vectorized: could not determine number of loop iterations [-Rpass-analysis=loop-vectorize]
+<repo>/include/vquery/hash/hash_table.hpp:75:5: remark: loop not vectorized: could not determine number of loop iterations [-Rpass-analysis=loop-vectorize]
+<repo>/include/vquery/hash/hash_table.hpp:75:5: remark: loop not vectorized [-Rpass-missed=loop-vectorize]
+<repo>/src/execution/execute.cpp:39:21: remark: loop not vectorized: loop contains a switch statement [-Rpass-analysis=loop-vectorize]
+   39 |         result.rows.push_back({key, value.count, value.sum});
+      |                     ^
+In file included from <repo>/src/execution/execute.cpp:1:
+In file included from <repo>/include/vquery/execution/operators.hpp:2:
+<repo>/include/vquery/hash/hash_table.hpp:57:5: remark: loop not vectorized: value that could not be identified as reduction is used outside the loop [-Rpass-analysis=loop-vectorize]
+   57 |     for (std::size_t i = 0; i < capacity(); ++i)
+      |     ^
+<repo>/include/vquery/hash/hash_table.hpp:57:5: remark: loop not vectorized: instruction cannot be vectorized [-Rpass-analysis=loop-vectorize]
+<repo>/include/vquery/hash/hash_table.hpp:57:5: remark: loop not vectorized: could not determine number of loop iterations [-Rpass-analysis=loop-vectorize]
+<repo>/include/vquery/hash/hash_table.hpp:57:5: remark: loop not vectorized [-Rpass-missed=loop-vectorize]
+<repo>/include/vquery/hash/hash_table.hpp:88:7: remark: loop not vectorized: value that could not be identified as reduction is used outside the loop [-Rpass-analysis=loop-vectorize]
+   88 |       while (used[slot])
+      |       ^
+<repo>/include/vquery/hash/hash_table.hpp:88:7: remark: loop not vectorized: could not determine number of loop iterations [-Rpass-analysis=loop-vectorize]
+<repo>/include/vquery/hash/hash_table.hpp:88:7: remark: loop not vectorized: could not determine number of loop iterations [-Rpass-analysis=loop-vectorize]
+<repo>/include/vquery/hash/hash_table.hpp:88:7: remark: loop not vectorized [-Rpass-missed=loop-vectorize]
+<repo>/include/vquery/hash/hash_table.hpp:75:5: remark: loop not vectorized: value that could not be identified as reduction is used outside the loop [-Rpass-analysis=loop-vectorize]
+   75 |     while (occupied_[slot] && keys_[slot] != key)
+      |     ^
+<repo>/include/vquery/hash/hash_table.hpp:75:5: remark: loop not vectorized: could not determine number of loop iterations [-Rpass-analysis=loop-vectorize]
+<repo>/include/vquery/hash/hash_table.hpp:75:5: remark: loop not vectorized: could not determine number of loop iterations [-Rpass-analysis=loop-vectorize]
+<repo>/include/vquery/hash/hash_table.hpp:75:5: remark: loop not vectorized [-Rpass-missed=loop-vectorize]
+<repo>/include/vquery/hash/hash_table.hpp:75:5: remark: loop not vectorized: value that could not be identified as reduction is used outside the loop [-Rpass-analysis=loop-vectorize]
+<repo>/include/vquery/hash/hash_table.hpp:75:5: remark: loop not vectorized: could not determine number of loop iterations [-Rpass-analysis=loop-vectorize]
+<repo>/include/vquery/hash/hash_table.hpp:75:5: remark: loop not vectorized: could not determine number of loop iterations [-Rpass-analysis=loop-vectorize]
+<repo>/include/vquery/hash/hash_table.hpp:75:5: remark: loop not vectorized [-Rpass-missed=loop-vectorize]
+<repo>/include/vquery/hash/hash_table.hpp:75:5: remark: loop not vectorized: value that could not be identified as reduction is used outside the loop [-Rpass-analysis=loop-vectorize]
+<repo>/include/vquery/hash/hash_table.hpp:75:5: remark: loop not vectorized: could not determine number of loop iterations [-Rpass-analysis=loop-vectorize]
+<repo>/include/vquery/hash/hash_table.hpp:75:5: remark: loop not vectorized: could not determine number of loop iterations [-Rpass-analysis=loop-vectorize]
+<repo>/include/vquery/hash/hash_table.hpp:75:5: remark: loop not vectorized [-Rpass-missed=loop-vectorize]
+<repo>/include/vquery/hash/hash_table.hpp:75:5: remark: loop not vectorized: value that could not be identified as reduction is used outside the loop [-Rpass-analysis=loop-vectorize]
+<repo>/include/vquery/hash/hash_table.hpp:75:5: remark: loop not vectorized: could not determine number of loop iterations [-Rpass-analysis=loop-vectorize]
+<repo>/include/vquery/hash/hash_table.hpp:75:5: remark: loop not vectorized: could not determine number of loop iterations [-Rpass-analysis=loop-vectorize]
+<repo>/include/vquery/hash/hash_table.hpp:75:5: remark: loop not vectorized [-Rpass-missed=loop-vectorize]
+<repo>/include/vquery/hash/hash_table.hpp:88:7: remark: loop not vectorized: value that could not be identified as reduction is used outside the loop [-Rpass-analysis=loop-vectorize]
+   88 |       while (used[slot])
+      |       ^
+<repo>/include/vquery/hash/hash_table.hpp:88:7: remark: loop not vectorized: could not determine number of loop iterations [-Rpass-analysis=loop-vectorize]
+<repo>/include/vquery/hash/hash_table.hpp:88:7: remark: loop not vectorized: could not determine number of loop iterations [-Rpass-analysis=loop-vectorize]
+<repo>/include/vquery/hash/hash_table.hpp:88:7: remark: loop not vectorized [-Rpass-missed=loop-vectorize]
+In file included from <repo>/src/execution/execute.cpp:1:
+In file included from <repo>/include/vquery/execution/operators.hpp:2:
+In file included from <repo>/include/vquery/hash/hash_table.hpp:2:
+In file included from <repo>/include/vquery/common/checksum.hpp:2:
+In file included from <repo>/include/vquery/common/types.hpp:2:
+In file included from <repo>/include/vquery/common/memory.hpp:2:
+In file included from <repo>/include/vquery/common/error.hpp:3:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/string:652:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/string_view:947:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:1854:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__algorithm/for_each.h:16:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__ranges/movable_box.h:21:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/optional:1302:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/memory:947:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__memory/inout_ptr.h:16:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__memory/shared_ptr.h:34:
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__memory/uninitialized_algorithms.h:632:5: remark: vectorized loop (vectorization width: 2, interleaved count: 2) [-Rpass=loop-vectorize]
+  632 |     while (__iter != __last) {
+      |     ^
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__memory/uninitialized_algorithms.h:518:3: remark: loop not vectorized: control flow cannot be substituted for a select [-Rpass-analysis=loop-vectorize]
+  518 |   for (; __first != __last; ++__first)
+      |   ^
+In file included from <repo>/src/execution/execute.cpp:1:
+In file included from <repo>/include/vquery/execution/operators.hpp:3:
+In file included from <repo>/include/vquery/runtime/context.hpp:4:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/stop_token:43:
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__stop_token/stop_source.h:77:85: remark: loop not vectorized: call instruction cannot be vectorized [-Rpass-analysis=loop-vectorize]
+   77 |   _LIBCPP_HIDE_FROM_ABI bool request_stop() noexcept { return __state_ && __state_->__request_stop(); }
+      |                                                                                     ^
+In file included from <repo>/src/execution/execute.cpp:1:
+In file included from <repo>/include/vquery/execution/operators.hpp:2:
+In file included from <repo>/include/vquery/hash/hash_table.hpp:2:
+In file included from <repo>/include/vquery/common/checksum.hpp:2:
+In file included from <repo>/include/vquery/common/types.hpp:2:
+In file included from <repo>/include/vquery/common/memory.hpp:2:
+In file included from <repo>/include/vquery/common/error.hpp:3:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/string:652:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/string_view:947:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:1854:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__algorithm/for_each.h:16:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__ranges/movable_box.h:21:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/optional:1302:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/memory:947:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__memory/inout_ptr.h:16:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__memory/shared_ptr.h:34:
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__memory/uninitialized_algorithms.h:518:3: remark: loop not vectorized: could not determine number of loop iterations [-Rpass-analysis=loop-vectorize]
+  518 |   for (; __first != __last; ++__first)
+      |   ^
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__memory/uninitialized_algorithms.h:518:3: remark: loop not vectorized: could not determine number of loop iterations [-Rpass-analysis=loop-vectorize]
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__memory/uninitialized_algorithms.h:518:3: remark: loop not vectorized [-Rpass-missed=loop-vectorize]
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__memory/uninitialized_algorithms.h:518:3: remark: loop not vectorized: control flow cannot be substituted for a select [-Rpass-analysis=loop-vectorize]
+In file included from <repo>/src/execution/execute.cpp:1:
+In file included from <repo>/include/vquery/execution/operators.hpp:3:
+In file included from <repo>/include/vquery/runtime/context.hpp:4:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/stop_token:43:
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__stop_token/stop_source.h:77:85: remark: loop not vectorized: call instruction cannot be vectorized [-Rpass-analysis=loop-vectorize]
+   77 |   _LIBCPP_HIDE_FROM_ABI bool request_stop() noexcept { return __state_ && __state_->__request_stop(); }
+      |                                                                                     ^
+In file included from <repo>/src/execution/execute.cpp:1:
+In file included from <repo>/include/vquery/execution/operators.hpp:2:
+In file included from <repo>/include/vquery/hash/hash_table.hpp:2:
+In file included from <repo>/include/vquery/common/checksum.hpp:2:
+In file included from <repo>/include/vquery/common/types.hpp:2:
+In file included from <repo>/include/vquery/common/memory.hpp:2:
+In file included from <repo>/include/vquery/common/error.hpp:3:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/string:652:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/string_view:947:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:1854:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__algorithm/for_each.h:16:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__ranges/movable_box.h:21:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/optional:1302:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/memory:947:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__memory/inout_ptr.h:16:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__memory/shared_ptr.h:34:
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__memory/uninitialized_algorithms.h:518:3: remark: loop not vectorized: could not determine number of loop iterations [-Rpass-analysis=loop-vectorize]
+  518 |   for (; __first != __last; ++__first)
+      |   ^
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__memory/uninitialized_algorithms.h:518:3: remark: loop not vectorized: could not determine number of loop iterations [-Rpass-analysis=loop-vectorize]
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__memory/uninitialized_algorithms.h:518:3: remark: loop not vectorized [-Rpass-missed=loop-vectorize]
+In file included from <repo>/src/execution/execute.cpp:6:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/thread:100:
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__thread/jthread.h:63:9: remark: loop not vectorized: control flow cannot be substituted for a select [-Rpass-analysis=loop-vectorize]
+   63 |     if (joinable()) {
+      |         ^
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__thread/jthread.h:63:9: remark: loop not vectorized: value that could not be identified as reduction is used outside the loop [-Rpass-analysis=loop-vectorize]
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__thread/jthread.h:63:9: remark: loop not vectorized: could not determine number of loop iterations [-Rpass-analysis=loop-vectorize]
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__thread/jthread.h:63:9: remark: loop not vectorized: could not determine number of loop iterations [-Rpass-analysis=loop-vectorize]
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__thread/jthread.h:63:9: remark: loop not vectorized [-Rpass-missed=loop-vectorize]
+In file included from <repo>/src/execution/execute.cpp:1:
+In file included from <repo>/include/vquery/execution/operators.hpp:2:
+In file included from <repo>/include/vquery/hash/hash_table.hpp:2:
+In file included from <repo>/include/vquery/common/checksum.hpp:2:
+In file included from <repo>/include/vquery/common/types.hpp:2:
+In file included from <repo>/include/vquery/common/memory.hpp:2:
+In file included from <repo>/include/vquery/common/error.hpp:3:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/string:652:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/string_view:947:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:1854:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__algorithm/for_each.h:16:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__ranges/movable_box.h:21:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/optional:1296:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/atomic:605:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__atomic/aliases.h:12:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__atomic/atomic.h:12:
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__atomic/atomic_sync.h:135:3: remark: loop not vectorized: loop contains a switch statement [-Rpass-analysis=loop-vectorize]
+  135 |   std::__libcpp_thread_poll_with_backoff(
+      |   ^
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__stop_token/stop_state.h:103:56: note: could not determine the original source location for /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__stop_token/atomic_unique_lock.h:0:0
+  103 |   _LIBCPP_AVAILABILITY_SYNC _LIBCPP_HIDE_FROM_ABI bool __request_stop() noexcept {
+      |                                                        ^
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__stop_token/stop_state.h:103:56: remark: loop not vectorized: value that could not be identified as reduction is used outside the loop [-Rpass-analysis=loop-vectorize]
+  103 |   _LIBCPP_AVAILABILITY_SYNC _LIBCPP_HIDE_FROM_ABI bool __request_stop() noexcept {
+      |                                                        ^
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__stop_token/stop_state.h:103:56: note: could not determine the original source location for /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__stop_token/atomic_unique_lock.h:0:0
+In file included from <repo>/src/execution/execute.cpp:1:
+In file included from <repo>/include/vquery/execution/operators.hpp:3:
+In file included from <repo>/include/vquery/runtime/context.hpp:4:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/stop_token:42:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__stop_token/stop_callback.h:18:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__stop_token/stop_state.h:15:
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__stop_token/atomic_unique_lock.h:100:7: remark: loop not vectorized: could not determine number of loop iterations [-Rpass-analysis=loop-vectorize]
+  100 |       while (true) {
+      |       ^
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__stop_token/atomic_unique_lock.h:100:7: remark: loop not vectorized: could not determine number of loop iterations [-Rpass-analysis=loop-vectorize]
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__stop_token/atomic_unique_lock.h:100:7: remark: loop not vectorized [-Rpass-missed=loop-vectorize]
+In file included from <repo>/src/execution/execute.cpp:1:
+In file included from <repo>/include/vquery/execution/operators.hpp:2:
+In file included from <repo>/include/vquery/hash/hash_table.hpp:2:
+In file included from <repo>/include/vquery/common/checksum.hpp:2:
+In file included from <repo>/include/vquery/common/types.hpp:2:
+In file included from <repo>/include/vquery/common/memory.hpp:2:
+In file included from <repo>/include/vquery/common/error.hpp:3:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/string:652:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/string_view:947:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:1854:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__algorithm/for_each.h:16:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__ranges/movable_box.h:21:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/optional:1296:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/atomic:605:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__atomic/aliases.h:12:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__atomic/atomic.h:12:
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__atomic/atomic_sync.h:135:3: remark: loop not vectorized: loop contains a switch statement [-Rpass-analysis=loop-vectorize]
+  135 |   std::__libcpp_thread_poll_with_backoff(
+      |   ^
+In file included from <repo>/src/execution/execute.cpp:1:
+In file included from <repo>/include/vquery/execution/operators.hpp:3:
+In file included from <repo>/include/vquery/runtime/context.hpp:4:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/stop_token:42:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__stop_token/stop_callback.h:18:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__stop_token/stop_state.h:15:
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__stop_token/atomic_unique_lock.h:100:7: remark: loop not vectorized: value that could not be identified as reduction is used outside the loop [-Rpass-analysis=loop-vectorize]
+  100 |       while (true) {
+      |       ^
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__stop_token/atomic_unique_lock.h:100:7: remark: loop not vectorized: could not determine number of loop iterations [-Rpass-analysis=loop-vectorize]
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__stop_token/atomic_unique_lock.h:100:7: remark: loop not vectorized: could not determine number of loop iterations [-Rpass-analysis=loop-vectorize]
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__stop_token/atomic_unique_lock.h:100:7: remark: loop not vectorized [-Rpass-missed=loop-vectorize]
+In file included from <repo>/src/execution/execute.cpp:1:
+In file included from <repo>/include/vquery/execution/operators.hpp:2:
+In file included from <repo>/include/vquery/hash/hash_table.hpp:2:
+In file included from <repo>/include/vquery/common/checksum.hpp:2:
+In file included from <repo>/include/vquery/common/types.hpp:2:
+In file included from <repo>/include/vquery/common/memory.hpp:2:
+In file included from <repo>/include/vquery/common/error.hpp:3:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/string:652:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/string_view:947:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:1854:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__algorithm/for_each.h:16:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__ranges/movable_box.h:21:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/optional:1296:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/atomic:605:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__atomic/aliases.h:12:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__atomic/atomic.h:12:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__atomic/atomic_sync.h:12:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__atomic/contention_t.h:12:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__atomic/support.h:109:
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__atomic/support/c11.h:81:10: remark: loop not vectorized: loop contains a switch statement [-Rpass-analysis=loop-vectorize]
+   81 |   return __c11_atomic_load(
+      |          ^
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__atomic/support/c11.h:81:10: remark: loop not vectorized: read with atomic ordering or volatile read [-Rpass-analysis=loop-vectorize]
+In file included from <repo>/src/execution/execute.cpp:1:
+In file included from <repo>/include/vquery/execution/operators.hpp:2:
+In file included from <repo>/include/vquery/hash/hash_table.hpp:2:
+In file included from <repo>/include/vquery/common/checksum.hpp:2:
+In file included from <repo>/include/vquery/common/types.hpp:2:
+In file included from <repo>/include/vquery/common/memory.hpp:2:
+In file included from <repo>/include/vquery/common/error.hpp:3:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/string:652:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/string_view:947:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:1854:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__algorithm/for_each.h:16:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__ranges/movable_box.h:21:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/optional:1296:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/atomic:605:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__atomic/aliases.h:12:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__atomic/atomic.h:12:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__atomic/atomic_sync.h:18:
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__thread/poll_with_backoff.h:40:3: remark: loop not vectorized: could not determine number of loop iterations [-Rpass-analysis=loop-vectorize]
+   40 |   for (int __count = 0;;) {
+      |   ^
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__thread/poll_with_backoff.h:40:3: remark: loop not vectorized [-Rpass-missed=loop-vectorize]
+In file included from <repo>/src/execution/execute.cpp:1:
+In file included from <repo>/include/vquery/execution/operators.hpp:2:
+In file included from <repo>/include/vquery/hash/hash_table.hpp:2:
+In file included from <repo>/include/vquery/common/checksum.hpp:2:
+In file included from <repo>/include/vquery/common/types.hpp:2:
+In file included from <repo>/include/vquery/common/memory.hpp:2:
+In file included from <repo>/include/vquery/common/error.hpp:3:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/string:652:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/string_view:947:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:1854:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__algorithm/for_each.h:16:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__ranges/movable_box.h:21:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/optional:1296:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/atomic:605:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__atomic/aliases.h:12:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__atomic/atomic.h:12:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__atomic/atomic_sync.h:12:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__atomic/contention_t.h:12:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__atomic/support.h:109:
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__atomic/support/c11.h:81:10: remark: loop not vectorized: loop contains a switch statement [-Rpass-analysis=loop-vectorize]
+   81 |   return __c11_atomic_load(
+      |          ^
+In file included from <repo>/src/execution/execute.cpp:1:
+In file included from <repo>/include/vquery/execution/operators.hpp:2:
+In file included from <repo>/include/vquery/hash/hash_table.hpp:2:
+In file included from <repo>/include/vquery/common/checksum.hpp:2:
+In file included from <repo>/include/vquery/common/types.hpp:2:
+In file included from <repo>/include/vquery/common/memory.hpp:2:
+In file included from <repo>/include/vquery/common/error.hpp:3:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/string:652:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/string_view:947:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:1854:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__algorithm/for_each.h:16:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__ranges/movable_box.h:21:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/optional:1296:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/atomic:605:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__atomic/aliases.h:12:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__atomic/atomic.h:12:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__atomic/atomic_sync.h:18:
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__thread/poll_with_backoff.h:47:43: remark: loop not vectorized: call instruction cannot be vectorized [-Rpass-analysis=loop-vectorize]
+   47 |     chrono::nanoseconds const __elapsed = chrono::high_resolution_clock::now() - __start;
+      |                                           ^
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__thread/poll_with_backoff.h:40:3: remark: loop not vectorized: could not determine number of loop iterations [-Rpass-analysis=loop-vectorize]
+   40 |   for (int __count = 0;;) {
+      |   ^
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__thread/poll_with_backoff.h:40:3: remark: loop not vectorized: could not determine number of loop iterations [-Rpass-analysis=loop-vectorize]
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__thread/poll_with_backoff.h:40:3: remark: loop not vectorized [-Rpass-missed=loop-vectorize]
+In file included from <repo>/src/execution/execute.cpp:1:
+In file included from <repo>/include/vquery/execution/operators.hpp:2:
+In file included from <repo>/include/vquery/hash/hash_table.hpp:2:
+In file included from <repo>/include/vquery/common/checksum.hpp:2:
+In file included from <repo>/include/vquery/common/types.hpp:2:
+In file included from <repo>/include/vquery/common/memory.hpp:2:
+In file included from <repo>/include/vquery/common/error.hpp:3:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/string:652:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/string_view:947:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:1854:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__algorithm/for_each.h:16:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__ranges/movable_box.h:21:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/optional:1296:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/atomic:605:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__atomic/aliases.h:12:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__atomic/atomic.h:12:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__atomic/atomic_sync.h:12:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__atomic/contention_t.h:12:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__atomic/support.h:109:
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__atomic/support/c11.h:81:10: remark: loop not vectorized: loop contains a switch statement [-Rpass-analysis=loop-vectorize]
+   81 |   return __c11_atomic_load(
+      |          ^
+In file included from <repo>/src/execution/execute.cpp:1:
+In file included from <repo>/include/vquery/execution/operators.hpp:2:
+In file included from <repo>/include/vquery/hash/hash_table.hpp:2:
+In file included from <repo>/include/vquery/common/checksum.hpp:2:
+In file included from <repo>/include/vquery/common/types.hpp:2:
+In file included from <repo>/include/vquery/common/memory.hpp:2:
+In file included from <repo>/include/vquery/common/error.hpp:3:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/string:652:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/string_view:947:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:1854:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__algorithm/for_each.h:16:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__ranges/movable_box.h:21:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/optional:1296:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/atomic:605:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__atomic/aliases.h:12:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__atomic/atomic.h:12:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__atomic/atomic_sync.h:18:
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__thread/poll_with_backoff.h:47:43: remark: loop not vectorized: call instruction cannot be vectorized [-Rpass-analysis=loop-vectorize]
+   47 |     chrono::nanoseconds const __elapsed = chrono::high_resolution_clock::now() - __start;
+      |                                           ^
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__thread/poll_with_backoff.h:40:3: remark: loop not vectorized: could not determine number of loop iterations [-Rpass-analysis=loop-vectorize]
+   40 |   for (int __count = 0;;) {
+      |   ^
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__thread/poll_with_backoff.h:40:3: remark: loop not vectorized: could not determine number of loop iterations [-Rpass-analysis=loop-vectorize]
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__thread/poll_with_backoff.h:40:3: remark: loop not vectorized [-Rpass-missed=loop-vectorize]
+In file included from <repo>/src/execution/execute.cpp:6:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/thread:100:
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__thread/jthread.h:63:9: remark: loop not vectorized: control flow cannot be substituted for a select [-Rpass-analysis=loop-vectorize]
+   63 |     if (joinable()) {
+      |         ^
+In file included from <repo>/src/execution/execute.cpp:1:
+In file included from <repo>/include/vquery/execution/operators.hpp:3:
+In file included from <repo>/include/vquery/runtime/context.hpp:4:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/stop_token:43:
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__stop_token/stop_source.h:77:85: remark: loop not vectorized: call instruction cannot be vectorized [-Rpass-analysis=loop-vectorize]
+   77 |   _LIBCPP_HIDE_FROM_ABI bool request_stop() noexcept { return __state_ && __state_->__request_stop(); }
+      |                                                                                     ^
+In file included from <repo>/src/execution/execute.cpp:6:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/thread:100:
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__thread/jthread.h:63:9: remark: loop not vectorized: could not determine number of loop iterations [-Rpass-analysis=loop-vectorize]
+   63 |     if (joinable()) {
+      |         ^
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__thread/jthread.h:63:9: remark: loop not vectorized: could not determine number of loop iterations [-Rpass-analysis=loop-vectorize]
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__thread/jthread.h:63:9: remark: loop not vectorized [-Rpass-missed=loop-vectorize]

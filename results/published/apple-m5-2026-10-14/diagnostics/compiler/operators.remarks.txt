@@ -1,0 +1,58 @@
+<repo>/src/execution/operators.cpp:55:20: remark: loop not vectorized: call instruction cannot be vectorized [-Rpass-analysis=loop-vectorize]
+   55 |     while (child_->next(out))
+      |                    ^
+<repo>/src/execution/operators.cpp:55:5: remark: loop not vectorized: could not determine number of loop iterations [-Rpass-analysis=loop-vectorize]
+   55 |     while (child_->next(out))
+      |     ^
+<repo>/src/execution/operators.cpp:55:5: remark: loop not vectorized: could not determine number of loop iterations [-Rpass-analysis=loop-vectorize]
+<repo>/src/execution/operators.cpp:55:5: remark: loop not vectorized [-Rpass-missed=loop-vectorize]
+In file included from <repo>/src/execution/operators.cpp:1:
+In file included from <repo>/include/vquery/execution/operators.hpp:2:
+<repo>/include/vquery/hash/hash_table.hpp:75:5: remark: loop not vectorized: value that could not be identified as reduction is used outside the loop [-Rpass-analysis=loop-vectorize]
+   75 |     while (occupied_[slot] && keys_[slot] != key)
+      |     ^
+<repo>/include/vquery/hash/hash_table.hpp:75:5: remark: loop not vectorized: could not determine number of loop iterations [-Rpass-analysis=loop-vectorize]
+<repo>/include/vquery/hash/hash_table.hpp:75:5: remark: loop not vectorized: could not determine number of loop iterations [-Rpass-analysis=loop-vectorize]
+<repo>/include/vquery/hash/hash_table.hpp:75:5: remark: loop not vectorized [-Rpass-missed=loop-vectorize]
+<repo>/src/execution/operators.cpp:134:7: remark: loop not vectorized: value that could not be identified as reduction is used outside the loop [-Rpass-analysis=loop-vectorize]
+  134 |       for (std::size_t i = 0; i < in.logical_count; ++i) {
+      |       ^
+In file included from <repo>/src/execution/operators.cpp:1:
+In file included from <repo>/include/vquery/execution/operators.hpp:2:
+In file included from <repo>/include/vquery/hash/hash_table.hpp:2:
+In file included from <repo>/include/vquery/common/checksum.hpp:2:
+In file included from <repo>/include/vquery/common/types.hpp:2:
+In file included from <repo>/include/vquery/common/memory.hpp:10:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/vector:314:
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__vector/vector.h:404:12: remark: loop not vectorized: cannot identify array bounds [-Rpass-analysis=loop-vectorize]
+  404 |     return this->__begin_[__n];
+      |            ^
+<repo>/src/execution/operators.cpp:134:7: remark: loop not vectorized [-Rpass-missed=loop-vectorize]
+  134 |       for (std::size_t i = 0; i < in.logical_count; ++i) {
+      |       ^
+<repo>/src/execution/operators.cpp:134:7: remark: loop not vectorized: value that could not be identified as reduction is used outside the loop [-Rpass-analysis=loop-vectorize]
+In file included from <repo>/src/execution/operators.cpp:1:
+In file included from <repo>/include/vquery/execution/operators.hpp:2:
+In file included from <repo>/include/vquery/hash/hash_table.hpp:2:
+In file included from <repo>/include/vquery/common/checksum.hpp:2:
+In file included from <repo>/include/vquery/common/types.hpp:2:
+In file included from <repo>/include/vquery/common/memory.hpp:10:
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/vector:314:
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__vector/vector.h:404:12: remark: loop not vectorized: cannot identify array bounds [-Rpass-analysis=loop-vectorize]
+  404 |     return this->__begin_[__n];
+      |            ^
+<repo>/src/execution/operators.cpp:134:7: remark: loop not vectorized [-Rpass-missed=loop-vectorize]
+  134 |       for (std::size_t i = 0; i < in.logical_count; ++i) {
+      |       ^
+In file included from <repo>/src/execution/operators.cpp:1:
+In file included from <repo>/include/vquery/execution/operators.hpp:2:
+<repo>/include/vquery/hash/hash_table.hpp:75:5: remark: loop not vectorized: value that could not be identified as reduction is used outside the loop [-Rpass-analysis=loop-vectorize]
+   75 |     while (occupied_[slot] && keys_[slot] != key)
+      |     ^
+<repo>/include/vquery/hash/hash_table.hpp:75:5: remark: loop not vectorized: could not determine number of loop iterations [-Rpass-analysis=loop-vectorize]
+<repo>/include/vquery/hash/hash_table.hpp:75:5: remark: loop not vectorized: could not determine number of loop iterations [-Rpass-analysis=loop-vectorize]
+<repo>/include/vquery/hash/hash_table.hpp:75:5: remark: loop not vectorized [-Rpass-missed=loop-vectorize]
+<repo>/include/vquery/hash/hash_table.hpp:75:5: remark: loop not vectorized: value that could not be identified as reduction is used outside the loop [-Rpass-analysis=loop-vectorize]
+<repo>/include/vquery/hash/hash_table.hpp:75:5: remark: loop not vectorized: could not determine number of loop iterations [-Rpass-analysis=loop-vectorize]
+<repo>/include/vquery/hash/hash_table.hpp:75:5: remark: loop not vectorized: could not determine number of loop iterations [-Rpass-analysis=loop-vectorize]
+<repo>/include/vquery/hash/hash_table.hpp:75:5: remark: loop not vectorized [-Rpass-missed=loop-vectorize]

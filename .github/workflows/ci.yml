@@ -56,3 +56,15 @@ jobs:
       - run: cmake --preset debug
       - run: cmake --build --preset debug --parallel 4
       - run: ctest --preset debug --parallel 4
+  report:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-python@v7.0.0
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: scripts/requirements-plot.txt
+      - run: python -m pip install -r scripts/requirements-plot.txt
+      - run: python scripts/plot_study.py --input-dir results/published/apple-m5-2026-10-14 --output-dir build/report-check
+      - run: diff docs/figures/analysis.json build/report-check/analysis.json

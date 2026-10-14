@@ -1,0 +1,48 @@
+[
+  {
+    "translation_unit": "src/execution/operators.cpp",
+    "compiler": "Apple clang version 17.0.0 (clang-1700.3.19.1)\nTarget: arm64-apple-darwin25.6.0\nThread model: posix\nInstalledDir: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin\n",
+    "command": [
+      "/usr/bin/c++",
+      "-I<repo>/include",
+      "-O3",
+      "-DNDEBUG",
+      "-std=c++20",
+      "-arch",
+      "arm64",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "<repo>/src/execution/operators.cpp",
+      "-S",
+      "-Rpass=loop-vectorize",
+      "-Rpass-missed=loop-vectorize",
+      "-Rpass-analysis=loop-vectorize",
+      "-o",
+      "<repo>/results/published/apple-m5-2026-10-14/diagnostics/compiler/operators.s"
+    ]
+  },
+  {
+    "translation_unit": "src/execution/execute.cpp",
+    "compiler": "Apple clang version 17.0.0 (clang-1700.3.19.1)\nTarget: arm64-apple-darwin25.6.0\nThread model: posix\nInstalledDir: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin\n",
+    "command": [
+      "/usr/bin/c++",
+      "-I<repo>/include",
+      "-O3",
+      "-DNDEBUG",
+      "-std=c++20",
+      "-arch",
+      "arm64",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "<repo>/src/execution/execute.cpp",
+      "-S",
+      "-Rpass=loop-vectorize",
+      "-Rpass-missed=loop-vectorize",
+      "-Rpass-analysis=loop-vectorize",
+      "-o",
+      "<repo>/results/published/apple-m5-2026-10-14/diagnostics/compiler/execute.s"
+    ]
+  }
+]
