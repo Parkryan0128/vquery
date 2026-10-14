@@ -45,7 +45,8 @@ struct State {
 };
 std::unique_ptr<State> run_range(QuerySpec q, const Tables &tables, ExecutionContext context,
                                  std::size_t begin, std::size_t end, const JoinTable *join,
-                                 std::stop_token stop) {
+                                 const std::stop_token &stop) {
+  context.stop = stop;
   auto state = std::make_unique<State>(q.query, context.budget);
   if (context.engine == Engine::batch_soa) {
     auto source = batch_pipeline(tables, q, begin, end, join);

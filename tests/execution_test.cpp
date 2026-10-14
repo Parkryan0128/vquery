@@ -204,3 +204,74 @@ TEST(Execution, SingleRowAndWideSums) {
     EXPECT_EQ(out[0].sum, INT64_C(5'000'000'000));
   }
 }
+
+TEST(Execution, PublicPipelinesRejectInvalidInputsBeforeScanning) {
+  const std::vector<FactRow> facts{{0, 0, 1, 0}};
+  auto budget = memory();
+  for (auto engine : {Engine::row_aos, Engine::row_soa}) {
+    auto table = from_fixture(engine, Query::filter_sum, facts, {}, budget);
+    EXPECT_THROW(row_pipeline(table, {Query::filter_sum, 1}, 0, 2, nullptr), Error);
+    EXPECT_THROW(row_pipeline(table, {Query::filter_sum, 1}, 1, 0, nullptr), Error);
+    EXPECT_THROW(row_pipeline(table, {Query::group_sum, 1}, 0, 1, nullptr), Error);
+    EXPECT_THROW(row_pipeline(table, {Query::filter_sum, 10001}, 0, 1, nullptr), Error);
+  }
+  auto table = from_fixture(Engine::batch_soa, Query::filter_sum, facts, {}, budget);
+  EXPECT_THROW(batch_scan(table, Query::filter_sum, 0, 2), Error);
+  EXPECT_THROW(batch_scan(table, Query::group_sum, 0, 1), Error);
+  EXPECT_THROW(batch_filter(nullptr, 5000), Error);
+  ExecutionContext context{Engine::batch_soa, 0, 1, budget};
+  auto scan = batch_scan(table, Query::filter_sum, 0, 1);
+  EXPECT_THROW(scan->open(context), Error);
+  auto filter = batch_filter(batch_scan(table, Query::filter_sum, 0, 1), 1);
+  for (auto size : {0u, 17u, 1000000u}) {
+    context.batch_size = size;
+    EXPECT_THROW(filter->open(context), Error);
+    filter->close();
+    EXPECT_EQ(budget->snapshot().query, 0u);
+  }
+  auto join_table = from_fixture(Engine::batch_soa, Query::join_group_sum, facts, {}, budget);
+  EXPECT_THROW(row_pipeline(join_table, {Query::join_group_sum, 1}, 0, 1, nullptr), Error);
+  EXPECT_THROW(batch_pipeline(join_table, {Query::join_group_sum, 1}, 0, 1, nullptr), Error);
+}
+
+TEST(Execution, CancellationIsObservedBetweenEmptyPhysicalBatches) {
+  struct CancellingSource final : BatchSource {
+    std::stop_source stop;
+    unsigned calls{};
+    std::uint32_t score = 9999;
+    void open(ExecutionContext &) override {}
+    bool next(Batch &out) override {
+      if (++calls > 8)
+        return false;
+      stop.request_stop();
+      out = {};
+      out.score = {&score, 1};
+      out.physical_count = out.logical_count = 1;
+      return true;
+    }
+    void close() noexcept override {}
+  };
+  auto budget = memory();
+  auto child = std::make_unique<CancellingSource>();
+  auto *observed = child.get();
+  ExecutionContext context{Engine::batch_soa, 256, 1, budget};
+  context.stop = child->stop.get_token();
+  auto filter = batch_filter(std::move(child), 0);
+  filter->open(context);
+  Batch batch;
+  EXPECT_FALSE(filter->next(batch));
+  EXPECT_EQ(observed->calls, 1u);
+  filter->close();
+  EXPECT_EQ(budget->snapshot().query, 0u);
+
+  const std::vector<FactRow> facts(513, {0, 0, 1, 0});
+  auto table = from_fixture(Engine::batch_soa, Query::filter_sum, facts, {}, budget);
+  auto scan = batch_scan(table, Query::filter_sum, 0, facts.size());
+  std::stop_source stop;
+  context.stop = stop.get_token();
+  scan->open(context);
+  EXPECT_TRUE(scan->next(batch));
+  stop.request_stop();
+  EXPECT_FALSE(scan->next(batch));
+  scan->close();
+}

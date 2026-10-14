@@ -8,6 +8,7 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from summarize import load_run, manifest_id, summarize
+from run_bench import load_manifest, validation_controls
 
 
 class Summaries(unittest.TestCase):
@@ -15,12 +16,20 @@ class Summaries(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.path = Path(self.temp.name) / "run.jsonl"
-        config = {"query": "filter-sum", "engine": "batch-soa", "rows": 10}
-        self.manifest = {"schema_version": 1, "binaries": {"vquery": "a" * 64, "vquery_bench": "b" * 64},
+        config = {"query": "filter-sum", "engine": "batch-soa", "rows": 10, "cutoff": 5000,
+                  "seed": 42, "groups": None, "dim_rows": None, "match_rate_bps": None,
+                  "distribution": None, "batch_size": 2048, "threads": 1,
+                  "memory_limit_bytes": 4096 * 1024 * 1024, "generator_version": 1, "serialization_version": 1}
+        self.manifest = {"schema_version": 1, "source": {"revision": "c" * 40, "dirty": False}, "binaries": {"vquery": "a" * 64, "vquery_bench": "b" * 64},
                          "validated": [{"config": config, "input_checksum": "1" * 16, "result_checksum": "2" * 16, "result_rows": 1}]}
+        for engine in ("row-aos", "row-soa"):
+            control = copy.deepcopy(self.manifest["validated"][0])
+            control["config"].update(engine=engine, batch_size=None)
+            self.manifest["validated"].append(control)
         self.manifest["validation_id"] = manifest_id(self.manifest)
-        self.meta = {"config": config, "completion_state": "complete", "run_status": "ok", "run_id": "fixture",
-                     "requested_samples": 4, "completed_samples": 4, "repetitions_in_sample": 2,
+        self.meta = {"schema_version": 1, "warmup": 3, "source": self.manifest["source"],
+                     "environment": {"cmake": {"CMAKE_BUILD_TYPE": "Release", "VQUERY_SANITIZER": "", "VQUERY_BUILD_TESTS": "ON"}}, "config": config, "completion_state": "complete", "run_status": "ok", "run_id": "fixture",
+                     "requested_samples": 15, "completed_samples": 15, "repetitions_in_sample": 2,
                      "validation_id": self.manifest["validation_id"], "binaries": self.manifest["binaries"],
                      "publication_eligible": True, "validation_manifest": "validation.json"}
         self.samples = [{**config, "schema_version": 1, "run_id": "fixture", "trial": i, "status": "ok",
@@ -28,7 +37,7 @@ class Summaries(unittest.TestCase):
                          "input_checksum": "1" * 16, "result_checksum": "2" * 16, "result_rows": 1,
                          "validation_status": "checksums_matched", "repetitions_in_sample": 2,
                          "elapsed_ns_total": 200 + i * 20, "elapsed_ns_per_query": 100 + i * 10,
-                         "managed_query_peak_bytes": 1024} for i in range(4)]
+                         "managed_query_peak_bytes": 1024, "managed_input_bytes": 200} for i in range(15)]
 
     def save(self):
         self.path.write_text("".join(json.dumps(s) + "\n" for s in self.samples))
@@ -39,8 +48,8 @@ class Summaries(unittest.TestCase):
         self.save()
         rows, errors = summarize(self.path.parent)
         self.assertEqual(errors, [])
-        self.assertEqual(rows[0]["median_ns"], 115)
-        self.assertEqual(rows[0]["iqr_ns"], 15)
+        self.assertEqual(rows[0]["median_ns"], 170)
+        self.assertEqual(rows[0]["iqr_ns"], 70)
         self.meta.update(completion_state="failed", run_status="memory_limit")
         self.save()
         rows, errors = summarize(self.path.parent)
@@ -76,6 +85,81 @@ class Summaries(unittest.TestCase):
         with self.path.open("a") as stream:
             stream.write('{"truncated":')
         self.assertEqual(summarize(self.path.parent, True)[0], [])
+
+    def test_malformed_record_does_not_abort_other_runs(self):
+        self.save()
+        good = self.path.read_text()
+        for content in ("null\n", "[]\n", "1\n", '{"trial":0,"trial":1}\n', '{"trial":NaN}\n'):
+            with self.subTest(content=content):
+                bad = self.path.parent / "bad.jsonl"
+                bad.write_text(content)
+                Path(str(bad) + ".meta.json").write_text(Path(str(self.path) + ".meta.json").read_text())
+                rows, errors = summarize(self.path.parent)
+                self.assertEqual(len(rows), 1)
+                self.assertEqual(len(errors), 1)
+                self.assertEqual(self.path.read_text(), good)
+        for content in ("null", "[]", '{"schema_version":1,"schema_version":2}'):
+            Path(str(bad) + ".meta.json").write_text(content)
+            self.assertEqual(len(summarize(self.path.parent)[0]), 1)
+        (self.path.parent / "validation.json").write_text("null")
+        self.assertEqual(summarize(self.path.parent)[0], [])
+
+    def test_publication_protocol_cannot_be_bypassed_by_a_flag(self):
+        original = copy.deepcopy(self.meta)
+        for change in ({"warmup": 0}, {"source": {"revision": "c" * 40, "dirty": True}},
+                       {"environment": {"cmake": {"CMAKE_BUILD_TYPE": "Debug"}}}):
+            with self.subTest(change=change):
+                self.meta = {**original, **change}
+                self.save()
+                with self.assertRaises(ValueError):
+                    load_run(self.path, True)
+        self.meta = original
+        self.manifest["validated"] = self.manifest["validated"][:1]
+        self.manifest["validation_id"] = manifest_id(self.manifest)
+        self.meta["validation_id"] = self.manifest["validation_id"]
+        for sample in self.samples:
+            sample["validation_id"] = self.manifest["validation_id"]
+        self.save()
+        with self.assertRaisesRegex(ValueError, "cross-engine"):
+            load_run(self.path, True)
+
+    def test_wrong_field_types_and_nonfinite_values_are_rejected(self):
+        original = copy.deepcopy(self.samples)
+        for field, value in (("elapsed_ns_per_query", True), ("elapsed_ns_per_query", float("inf")),
+                             ("trial", False), ("managed_query_peak_bytes", -1),
+                             ("input_checksum", None), ("result_rows", [])):
+            with self.subTest(field=field, value=value):
+                self.samples = copy.deepcopy(original)
+                self.samples[0][field] = value
+                self.save()
+                self.assertEqual(summarize(self.path.parent, True)[0], [])
+
+
+class RunnerInput(unittest.TestCase):
+    def test_invalid_manifest_is_rejected_before_work(self):
+        valid = {"schema_version": 1, "cases": [{"query": "filter-sum", "engine": "row-aos"}]}
+        cases = [None, [], {}, {**valid, "cases": [None]}, {**valid, "cases": [{}]},
+                 {**valid, "defaults": []}, {**valid, "warmup": True}, {**valid, "repetitions": 0},
+                 {**valid, "repetitons": 15}, {**valid, "cases": [{"query": [], "engine": "row-aos"}]},
+                 {**valid, "defaults": {"rows": None}}]
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "manifest.json"
+            for case in cases:
+                with self.subTest(case=case):
+                    path.write_text(json.dumps(case))
+                    with self.assertRaises(ValueError):
+                        load_manifest(path)
+            path.write_text(json.dumps(valid))
+            self.assertEqual(load_manifest(path), valid)
+
+    def test_every_engine_has_independent_controls(self):
+        for engine in ("row-aos", "row-soa", "batch-soa"):
+            flags = ["--query", "filter-sum", "--engine", engine, "--rows", "10"]
+            controls = [dict(zip(c[::2], c[1::2])) for c in validation_controls(flags)]
+            self.assertEqual({c["--engine"] for c in controls}, {"row-aos", "row-soa", "batch-soa"})
+            for control in controls:
+                self.assertEqual(control["--threads"], "1")
+                self.assertEqual("--batch-size" in control, control["--engine"] == "batch-soa")
 
 
 if __name__ == "__main__":

@@ -167,3 +167,16 @@ TEST(Hash, FixedHashVectors) {
   EXPECT_EQ(KeyHash{}(1), UINT64_C(0x509252f3a8113dfc));
   EXPECT_EQ(KeyHash{}(UINT32_MAX), UINT64_C(0x13e3f7b9953ddd63));
 }
+
+TEST(Hash, UniqueInsertCanCopyAnExistingValueAcrossGrowth) {
+  auto budget = memory();
+  HashTable<Aggregate> table(budget);
+  for (std::uint32_t i = 0; i < 716; ++i)
+    table.find_or_insert(i) = {i + 10, static_cast<std::int64_t>(i) * 100};
+  const auto &value = *table.find(42);
+  table.insert_unique(716, value);
+  ASSERT_GT(table.capacity(), 1024u);
+  ASSERT_NE(table.find(716), nullptr);
+  EXPECT_EQ(table.find(716)->count, 52u);
+  EXPECT_EQ(table.find(716)->sum, 4200);
+}

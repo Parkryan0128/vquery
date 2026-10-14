@@ -54,3 +54,7 @@ A validation ID is SHA-256 of the manifest excluding `validation_id`, encoded us
 - Linux is the performance-study and sanitizer validation platform. macOS/ARM64 is supported for development. Local sandbox restrictions may prevent sanitizer runtime startup; this is not a passing sanitizer result.
 
 - macOS CI uses the [macOS 26 ARM64 runner](https://github.com/actions/runner-images#available-images). The macOS 15 image failed the `std::jthread` configure probe even with Apple Clang 17, so compiler version alone is not a sufficient compatibility check. Keep the probe enabled.
+
+## Review follow-up
+
+The [2026-10-14 code review](reviews/2026-10-14.md) hardened output failure handling, public pipeline boundaries, hash insertion aliasing, and cancellation between empty physical batches. Query semantics, generator version, and canonical serialization remain unchanged. Benchmark readers now validate JSON shape/types and publication protocol metadata; the runner supplies cross-engine controls for single-engine manifests as well.

@@ -12,6 +12,7 @@ import subprocess
 import sys
 
 from summarize import manifest_id, summarize
+from records import ENGINES, config_record, integer, object_record, read_record, semantic_key
 
 ROOT = Path(__file__).resolve().parents[1]
 COMMON = {"rows", "cutoff", "seed", "threads", "memory-limit-mib"}
@@ -43,34 +44,73 @@ def source_state():
 
 
 def arguments(case, defaults):
+    object_record(case, "case")
+    if "query" not in case or "engine" not in case:
+        raise ValueError("each case requires query and engine")
     query, engine = case["query"], case["engine"]
-    if query not in QUERY_OPTIONS or engine not in ("row-aos", "row-soa", "batch-soa"):
+    if not isinstance(query, str) or query not in QUERY_OPTIONS or engine not in ENGINES:
         raise ValueError("unknown query or engine in manifest")
     allowed = COMMON | QUERY_OPTIONS[query] | ({"batch-size"} if engine == "batch-soa" else set())
     if set(case) - allowed - {"query", "engine"}:
         raise ValueError(f"inapplicable case options: {set(case) - allowed - {'query', 'engine'}}")
     merged = {**defaults, **case}
     if engine != "batch-soa":
-        if case.get("threads", 1) != 1:
+        if str(case.get("threads", 1)) != "1":
             raise ValueError("row case requests parallel execution")
         merged["threads"] = 1
     result = ["--query", query, "--engine", engine]
     for key in sorted(allowed):
         if key in merged:
-            result.extend(["--" + key, str(merged[key])])
+            value = merged[key]
+            if key == "distribution":
+                if value not in ("uniform", "hot-key-90"):
+                    raise ValueError("invalid distribution")
+            elif key == "match-rate":
+                if type(value) not in (int, float, str):
+                    raise ValueError("match-rate must be a decimal value")
+            else:
+                if isinstance(value, str) and value.isascii() and value.isdecimal():
+                    value = int(value)
+                integer(value, key)
+            result.extend(["--" + key, str(value)])
     return result
 
 
-def semantic_key(config):
-    return json.dumps({k: v for k, v in config.items() if k not in
-                       {"engine", "batch_size", "threads", "memory_limit_bytes"}}, sort_keys=True)
+def validation_controls(flags):
+    """Always compare all layouts, including single-engine manifests."""
+    settings = {key.removeprefix("--"): value for key, value in zip(flags[::2], flags[1::2])}
+    for engine in ENGINES:
+        control = {**settings, "engine": engine, "threads": 1}
+        if engine == "batch-soa":
+            control.setdefault("batch-size", 2048)
+        else:
+            control.pop("batch-size", None)
+        yield arguments(control, {})
+
+
+def load_manifest(path):
+    spec = read_record(path)
+    integer(spec.get("schema_version"), "manifest schema_version", 1, 1)
+    if set(spec) - {"schema_version", "cases", "defaults", "warmup", "repetitions", "schedule_seed"}:
+        raise ValueError("unknown top-level manifest option")
+    if not isinstance(spec.get("cases"), list) or not spec["cases"]:
+        raise ValueError("manifest cases must be a nonempty array")
+    defaults = object_record(spec.get("defaults", {}), "defaults")
+    if set(defaults) - COMMON - {"groups", "dim-rows", "match-rate", "distribution", "batch-size"}:
+        raise ValueError("unknown default option in manifest")
+    integer(spec.get("warmup", 3), "warmup")
+    integer(spec.get("repetitions", 15), "repetitions", 1)
+    integer(spec.get("schedule_seed", 42), "schedule_seed")
+    for case in spec["cases"]:
+        arguments(case, defaults)
+    return spec
 
 
 def build_environment(build):
     values = {}
     cache = build / "CMakeCache.txt"
     if cache.exists():
-        wanted = {"CMAKE_BUILD_TYPE", "CMAKE_CXX_COMPILER", "CMAKE_CXX_FLAGS", "CMAKE_CXX_FLAGS_RELEASE", "VQUERY_SANITIZER"}
+        wanted = {"CMAKE_BUILD_TYPE", "CMAKE_CXX_COMPILER", "CMAKE_CXX_FLAGS", "CMAKE_CXX_FLAGS_RELEASE", "VQUERY_SANITIZER", "VQUERY_BUILD_TESTS"}
         for line in cache.read_text().splitlines():
             if "=" in line and ":" in line.split("=", 1)[0]:
                 left, value = line.split("=", 1)
@@ -115,9 +155,7 @@ def build_environment(build):
 
 
 def run(args):
-    spec = json.loads(args.manifest.read_text())
-    if spec.get("schema_version") != 1 or not spec.get("cases"):
-        raise ValueError("manifest requires schema_version 1 and nonempty cases")
+    spec = load_manifest(args.manifest)
     state = source_state()
     if not args.exploratory:
         if state["dirty"]:
@@ -126,14 +164,17 @@ def run(args):
             raise ValueError("publication runs use build/release; custom builds require --exploratory")
         call(["cmake", "--preset", "release"], cwd=ROOT)
         call(["cmake", "--build", "--preset", "release"], cwd=ROOT)
-        call(["ctest", "--preset", "release"], cwd=ROOT)
+        call(["ctest", "--preset", "release", "--no-tests=error"], cwd=ROOT)
     binaries = {"vquery": args.build_dir / "vquery", "vquery_bench": args.build_dir / "vquery_bench"}
     identities = {name: digest(path) for name, path in binaries.items()}
     args.output_dir.mkdir(parents=True, exist_ok=False)
     environment = build_environment(args.build_dir)
+    if not args.exploratory:
+        build = environment["cmake"]
+        if (build.get("CMAKE_BUILD_TYPE") != "Release" or build.get("VQUERY_SANITIZER") != "" or
+                build.get("VQUERY_BUILD_TESTS") != "ON"):
+            raise ValueError("publication requires a tested Release build without sanitizers")
     defaults = spec.get("defaults", {})
-    if set(defaults) - COMMON - {"groups", "dim-rows", "match-rate", "distribution", "batch-size"}:
-        raise ValueError("unknown default option in manifest")
     cases = []
     seen = set()
     for case in spec["cases"]:
@@ -151,6 +192,7 @@ def run(args):
         if tuple(flags) in validation_cache:
             return validation_cache[tuple(flags)]
         payload = json.loads(call([binaries["vquery"], *flags, "--format", "json"], capture_output=True).stdout)
+        config_record(payload["config"])
         key = semantic_key(payload["config"])
         if key in expected_by_input:
             previous = expected_by_input[key]
@@ -167,11 +209,8 @@ def run(args):
 
     for index, flags in enumerate(cases):
         record = validate(flags)
-        # Every batch-only sweep still has an independent row execution control.
-        if record["config"]["engine"] == "batch-soa":
-            control = dict(zip(flags[::2], flags[1::2]))
-            control["--engine"] = "row-soa"; control["--threads"] = "1"; control.pop("--batch-size", None)
-            validate([item for pair in control.items() for item in pair])
+        for control in validation_controls(flags):
+            validate(control)
         work.append((index, flags, record))
         print(f"Validated {index+1}/{len(cases)} configurations", flush=True)
     manifest = {"schema_version": 1, "source": state, "binaries": identities, "validated": validated}

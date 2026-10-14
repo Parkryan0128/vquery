@@ -5,7 +5,9 @@ int main(int argc, char **argv) {
   try {
     const auto options = vquery::cli::parse(argc, argv, false);
     if (options.help) {
-      std::cout << vquery::cli::help(false);
+      std::cout << vquery::cli::help(false) << std::flush;
+      if (!std::cout)
+        throw vquery::Error(vquery::ErrorCode::output_failed, "help output failed");
       return 0;
     }
     const auto &c = options.config;
@@ -25,6 +27,7 @@ int main(int argc, char **argv) {
         std::cout << (c.query == vquery::Query::filter_sum ? "-" : std::to_string(row.key)) << '\t'
                   << row.count << '\t' << row.sum << '\n';
     }
+    std::cout.flush();
     if (!std::cout)
       throw vquery::Error(vquery::ErrorCode::output_failed, "result output failed");
     return 0;

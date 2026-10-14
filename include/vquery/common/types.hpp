@@ -65,5 +65,9 @@ struct QueryResult {
   Query query;
   Buffer<ResultRow> rows;
 };
+inline void validate_batch_size(std::size_t size) {
+  if (size < 256 || size > 8192 || (size & (size - 1)) != 0)
+    throw Error(ErrorCode::invalid_argument, "unsupported batch size");
+}
 void validate_config(const Config &);
 } // namespace vquery

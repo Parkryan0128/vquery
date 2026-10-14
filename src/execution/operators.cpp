@@ -3,6 +3,16 @@
 
 namespace vquery {
 namespace {
+void validate_scan(const Tables &table, Query query, std::size_t begin, std::size_t end) {
+  if (begin > end || end > table.fact_count || query != table.query)
+    throw Error(ErrorCode::invalid_argument, "invalid scan range or query");
+  table.validate_shape();
+}
+
+void validate_join(QuerySpec query, const JoinTable *join) {
+  if (query.cutoff > 10000 || (query.query == Query::join_group_sum) != (join != nullptr))
+    throw Error(ErrorCode::invalid_argument, "invalid filter cutoff or join input");
+}
 template <bool Aos, Query Q> class ScanRow final : public RowSource {
 public:
   ScanRow(const Tables &t, std::size_t begin, std::size_t end)
@@ -78,11 +88,13 @@ public:
   ScanBatch(const Tables &t, Query q, std::size_t begin, std::size_t end)
       : table_(t), query_(q), begin_(begin), end_(end) {}
   void open(ExecutionContext &context) override {
+    validate_batch_size(context.batch_size);
     at_ = begin_;
     batch_size_ = context.batch_size;
+    stop_ = context.stop;
   }
   bool next(Batch &out) override {
-    if (at_ == end_)
+    if (stop_.stop_requested() || at_ == end_)
       return false;
     const auto n = std::min(batch_size_, end_ - at_);
     out = {};
@@ -102,19 +114,22 @@ private:
   const Tables &table_;
   Query query_;
   std::size_t begin_, end_, at_{}, batch_size_{};
+  std::stop_token stop_;
 };
 class FilterBatch final : public BatchSource {
 public:
   FilterBatch(std::unique_ptr<BatchSource> child, std::uint32_t cutoff)
       : child_(std::move(child)), cutoff_(cutoff) {}
   void open(ExecutionContext &context) override {
+    validate_batch_size(context.batch_size);
+    stop_ = context.stop;
     selected_ = make_buffer<std::uint32_t>(context.budget);
     selected_.resize(context.batch_size);
     child_->open(context);
   }
   bool next(Batch &out) override {
     Batch in;
-    while (child_->next(in)) {
+    while (!stop_.stop_requested() && child_->next(in)) {
       std::size_t count = 0;
       for (std::size_t i = 0; i < in.logical_count; ++i) {
         const auto p = in.position(i);
@@ -140,12 +155,15 @@ private:
   std::unique_ptr<BatchSource> child_;
   std::uint32_t cutoff_;
   Buffer<std::uint32_t> selected_;
+  std::stop_token stop_;
 };
 class JoinBatch final : public BatchSource {
 public:
   JoinBatch(std::unique_ptr<BatchSource> child, const JoinTable &join)
       : child_(std::move(child)), join_(join) {}
   void open(ExecutionContext &context) override {
+    validate_batch_size(context.batch_size);
+    stop_ = context.stop;
     keys_ = make_buffer<std::uint32_t>(context.budget);
     amounts_ = make_buffer<std::int64_t>(context.budget);
     keys_.resize(context.batch_size);
@@ -154,7 +172,7 @@ public:
   }
   bool next(Batch &out) override {
     Batch in;
-    while (child_->next(in)) {
+    while (!stop_.stop_requested() && child_->next(in)) {
       std::size_t count = 0;
       for (std::size_t i = 0; i < in.logical_count; ++i) {
         const auto p = in.position(i);
@@ -187,6 +205,7 @@ private:
   const JoinTable &join_;
   Buffer<std::uint32_t> keys_;
   Buffer<std::int64_t> amounts_;
+  std::stop_token stop_;
 };
 template <bool Aos>
 std::unique_ptr<RowSource> make_scan(const Tables &t, Query q, std::size_t begin, std::size_t end) {
@@ -203,6 +222,8 @@ std::unique_ptr<RowSource> make_scan(const Tables &t, Query q, std::size_t begin
 } // namespace
 std::unique_ptr<RowSource> row_pipeline(const Tables &t, QuerySpec q, std::size_t begin,
                                         std::size_t end, const JoinTable *join) {
+  validate_scan(t, q.query, begin, end);
+  validate_join(q, join);
   auto scan =
       t.aos ? make_scan<true>(t, q.query, begin, end) : make_scan<false>(t, q.query, begin, end);
   std::unique_ptr<RowSource> source = std::make_unique<FilterRow>(std::move(scan), q.cutoff);
@@ -212,16 +233,20 @@ std::unique_ptr<RowSource> row_pipeline(const Tables &t, QuerySpec q, std::size_
 }
 std::unique_ptr<BatchSource> batch_scan(const Tables &t, Query q, std::size_t begin,
                                         std::size_t end) {
-  if (t.aos || begin > end || end > t.fact_count)
+  validate_scan(t, q, begin, end);
+  if (t.aos)
     throw Error(ErrorCode::invalid_argument, "invalid batch scan range/layout");
   return std::make_unique<ScanBatch>(t, q, begin, end);
 }
 std::unique_ptr<BatchSource> batch_filter(std::unique_ptr<BatchSource> child,
                                           std::uint32_t cutoff) {
+  if (!child || cutoff > 10000)
+    throw Error(ErrorCode::invalid_argument, "invalid filter child or cutoff");
   return std::make_unique<FilterBatch>(std::move(child), cutoff);
 }
 std::unique_ptr<BatchSource> batch_pipeline(const Tables &t, QuerySpec q, std::size_t begin,
                                             std::size_t end, const JoinTable *join) {
+  validate_join(q, join);
   auto source = batch_filter(batch_scan(t, q.query, begin, end), q.cutoff);
   if (join)
     source = std::make_unique<JoinBatch>(std::move(source), *join);

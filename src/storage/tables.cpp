@@ -1,10 +1,7 @@
 #include "vquery/storage/tables.hpp"
-#include <algorithm>
-#include <array>
 
 namespace vquery {
 void validate_config(const Config &c) {
-  constexpr std::array<std::size_t, 6> batches{256, 512, 1024, 2048, 4096, 8192};
   if (c.rows > 100'000'000 || c.dim_rows > 10'000'000 || c.groups < 1 || c.groups > 1'000'000 ||
       c.cutoff > 10000 || c.match_rate_bps > 10000 || c.memory_limit == 0)
     throw Error(ErrorCode::invalid_argument, "configuration exceeds supported bounds");
@@ -12,8 +9,7 @@ void validate_config(const Config &c) {
     throw Error(ErrorCode::invalid_argument, "threads must be 1, 2, or 4");
   if (c.engine != Engine::batch_soa && c.threads != 1)
     throw Error(ErrorCode::invalid_argument, "row engines support one thread");
-  if (std::find(batches.begin(), batches.end(), c.batch_size) == batches.end())
-    throw Error(ErrorCode::invalid_argument, "unsupported batch size");
+  validate_batch_size(c.batch_size);
   if (c.query == Query::join_group_sum && c.dim_rows == 0 && c.match_rate_bps != 0)
     throw Error(ErrorCode::invalid_argument, "empty dimension requires match rate zero");
 }

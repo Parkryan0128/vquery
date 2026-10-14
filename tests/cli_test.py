@@ -5,6 +5,8 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import resource
+import signal
 
 CLI, BENCH = map(Path, sys.argv[1:3])
 sys.argv = sys.argv[:1]
@@ -21,6 +23,38 @@ def invoke(binary, *flags, success=True):
 
 
 class Contracts(unittest.TestCase):
+    def test_buffered_stdout_failure_is_reported(self):
+        def deny_file_writes():
+            signal.signal(signal.SIGXFSZ, signal.SIG_IGN)
+            resource.setrlimit(resource.RLIMIT_FSIZE, (0, 0))
+
+        for flags in (["--query", "filter-sum", "--engine", "batch-soa", "--rows", "0", "--format", "json"],
+                      ["--help"]):
+            with tempfile.TemporaryFile() as output:
+                result = subprocess.run([str(CLI), *flags], stdout=output, stderr=subprocess.PIPE,
+                                        text=True, preexec_fn=deny_file_writes)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertEqual(json.loads(result.stderr)["status"], "output_failed")
+
+    def test_release_preset_resets_stale_cache_and_rejects_empty_tests(self):
+        with tempfile.TemporaryDirectory() as directory:
+            build = Path(directory) / "build"
+            base = ["cmake", "--preset", "release", "-B", str(build)]
+            dependency = CLI.parent / "_deps/googletest-src"
+            commands = [base + ["-DVQUERY_BUILD_TESTS=OFF", "-DVQUERY_SANITIZER=thread",
+                                f"-DFETCHCONTENT_SOURCE_DIR_GOOGLETEST={dependency}"], base]
+            for command in commands:
+                result = subprocess.run(command, cwd=ROOT, capture_output=True, text=True)
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            cache = (build / "CMakeCache.txt").read_text()
+            self.assertIn("VQUERY_BUILD_TESTS:BOOL=ON\n", cache)
+            self.assertIn("VQUERY_SANITIZER:STRING=\n", cache)
+            empty = Path(directory) / "empty"
+            empty.mkdir()
+            result = subprocess.run(["ctest", "--preset", "release", "--test-dir", str(empty)],
+                                    cwd=ROOT, text=True, capture_output=True)
+            self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+
     def test_invalid_arguments(self):
         base = ["--query", "filter-sum", "--engine", "batch-soa"]
         for flags in (["--rows", "-1"], ["--rows", "100000001"], ["--rows", "1", "--rows", "2"],
@@ -91,6 +125,21 @@ class Contracts(unittest.TestCase):
                 meta, _, eligible = load_run(raw, True)
                 self.assertFalse(eligible)
                 self.assertEqual(meta["validation_manifest"], "validation.json")
+
+    def test_row_only_manifest_still_compares_engines(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            manifest = root / "row-only.json"
+            manifest.write_text(json.dumps({"schema_version": 1, "warmup": 0, "repetitions": 1,
+                                           "cases": [{"query": "filter-sum", "engine": "row-aos", "rows": 17}]}))
+            output = root / "results"
+            result = subprocess.run([sys.executable, ROOT / "scripts/run_bench.py", "--exploratory",
+                                     "--build-dir", CLI.parent, "--manifest", manifest, "--output-dir", output],
+                                    capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            validation = json.loads((output / "validation.json").read_text())
+            self.assertEqual({entry["config"]["engine"] for entry in validation["validated"]},
+                             {"row-aos", "row-soa", "batch-soa"})
 
 
 if __name__ == "__main__":

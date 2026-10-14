@@ -207,12 +207,14 @@ int run(const cli::Options &options) {
     } catch (const std::exception &e) {
       message = e.what();
     } catch (...) {
+      // Retain the fallback code/message for non-standard exceptions.
     }
     try {
       output.close();
       replace_metadata(metadata_path, metadata(options, id, "failed", code, completed, k, message),
                        id);
     } catch (...) {
+      // Keep the original query/output failure; incomplete metadata is rejected.
     }
     std::rethrow_exception(failure);
   }

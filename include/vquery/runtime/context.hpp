@@ -1,6 +1,7 @@
 #pragma once
 #include "vquery/common/types.hpp"
 #include <functional>
+#include <stop_token>
 
 namespace vquery {
 struct ExecutionHooks {
@@ -13,6 +14,9 @@ struct ExecutionContext {
   unsigned threads;
   std::shared_ptr<MemoryBudget> budget;
   const ExecutionHooks *hooks = nullptr;
+  // Internal worker cancellation, copied into operators during open().
+  // execute() supplies its own token; this is not a partial-result public API.
+  std::stop_token stop{};
 };
 struct QuerySpec {
   Query query;

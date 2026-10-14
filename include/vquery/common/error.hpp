@@ -34,8 +34,7 @@ inline std::string_view name(ErrorCode code) {
 }
 class Error : public std::runtime_error {
 public:
-  Error(ErrorCode code, std::string message)
-      : std::runtime_error(std::move(message)), code_(code) {}
+  Error(ErrorCode code, const std::string &message) : std::runtime_error(message), code_(code) {}
   ErrorCode code() const noexcept { return code_; }
 
 private:

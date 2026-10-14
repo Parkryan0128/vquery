@@ -108,10 +108,11 @@ Options parse(int argc, char **argv, bool benchmark) {
     else if (key == "threads")
       c.threads = narrow(integer(value));
     else if (key == "memory-limit-mib") {
+      constexpr std::size_t bytes_per_mib = 1024 * 1024;
       auto mib = integer(value);
-      if (mib > SIZE_MAX / (1024 * 1024))
+      if (mib > SIZE_MAX / bytes_per_mib)
         throw Error(ErrorCode::invalid_argument, "memory limit overflow");
-      c.memory_limit = mib * 1024 * 1024;
+      c.memory_limit = mib * bytes_per_mib;
     } else if (key == "distribution") {
       if (value == "uniform")
         c.distribution = Distribution::uniform;

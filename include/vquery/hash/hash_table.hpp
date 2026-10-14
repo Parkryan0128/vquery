@@ -36,7 +36,8 @@ public:
     ++size_;
     return values_[slot];
   }
-  void insert_unique(std::uint32_t key, const Value &value) {
+  // Copy before growth: the caller may pass a value already stored in this table.
+  void insert_unique(std::uint32_t key, Value value) {
     if (find(key))
       throw Error(ErrorCode::invalid_input, "duplicate dimension key");
     find_or_insert(key) = value;

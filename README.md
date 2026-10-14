@@ -330,6 +330,7 @@ vquery/
 │   └── runner_test.py          # Corruption and whole-run exclusion
 ├── scripts/
 │   ├── run_bench.py            # Full-output validation and run orchestration
+│   ├── records.py              # Strict JSON and configuration contracts
 │   └── summarize.py            # Complete valid runs → JSON/CSV summaries
 ├── docs/
 │   ├── decisions.md
@@ -352,7 +353,7 @@ The CLI, benchmark runner, and tests link the same `vquery_core` library. Exclud
 
 ### 9.2 Build Policy
 
-Provide matching configure, build, and test presets named `debug`, `release`, `asan-ubsan`, and `tsan`. ASan/UBSan and TSan use separate builds.
+Provide matching configure, build, and test presets named `debug`, `release`, `asan-ubsan`, and `tsan`. ASan/UBSan and TSan use separate builds. The normal presets explicitly enable tests and clear the sanitizer option, so a previous cache customization cannot silently contaminate a measurement build. Test presets fail when no tests are discovered.
 
 Use `-O3 -DNDEBUG` consistently for Release. Leave LTO and host-specific ISA tuning off by default. All primary comparisons use one common binary. Experiments enabling native ISA options or LTO receive distinct configuration identifiers. Timings from sanitizer or diagnostic/profiling builds do not enter the primary performance table.
 
@@ -454,7 +455,7 @@ Run one variable sweep at a time, remove duplicate default configurations, and a
 
 ### 10.3 Correctness Before Timing
 
-Before publishing a configuration, run an untimed validation pass in separate processes for each applicable execution mode using `vquery --format json`. First require identical input checksums and normalized query/generator settings, then compare the complete, canonically sorted outputs, including different thread counts and batch sizes where applicable. A batch-only sweep must also validate its outputs against `row-soa` on the same input, even if that control's time is not plotted. The runner may use temporary result files for comparison.
+Before publishing a configuration, run an untimed validation pass in separate processes for each applicable execution mode using `vquery --format json`. First require identical input checksums and normalized query/generator settings, then compare the complete, canonically sorted outputs, including different thread counts and batch sizes where applicable. The runner adds single-thread controls for all three engines even when a manifest measures only one engine. A batch-only sweep therefore always validates against `row-soa` on the same input, even if that control's time is not plotted. The runner may use temporary result files for comparison.
 
 Small inputs additionally use the independent reference implementation in Section 11. Full-size cross-engine agreement complements those tests; it is not a replacement for an independent oracle.
 
@@ -515,7 +516,7 @@ Use `null` for inapplicable or unavailable fields. Represent checksums as fixed-
 
 `metadata_path` is a filename relative to its raw JSONL file, so a result directory can be moved intact. Missing hardware/RSS information is recorded as `null`. The JSON metadata referenced by `metadata_path` includes the fully resolved command/configuration, requested warmups and sample count, memory limit, calibration rule and chosen K, scheduling seed, validation-manifest reference, executable identities, environment, and run completion state. Keep workload identity separate from engine settings when matching comparison pairs. Do not pool measurements from different binaries, machines, or timing protocols.
 
-A run is publishable only after all requested samples succeed, all expected checksums match, the output files close successfully, and metadata is finalized with `completion_state=complete` and `run_status=ok`. Finalize that metadata atomically after writing the raw samples. Any later failure invalidates earlier samples from the same run for publication; preserve them for diagnosis. A crash, truncated record, missing trial, duplicate trial, or unfinished metadata makes the run incomplete. `summarize.py` must exclude the entire failed/incomplete run rather than averaging its surviving successful samples. Unchecked standalone runs may receive a clearly labeled exploratory summary, but never enter the published comparison.
+A run is publishable only after all requested samples succeed, all expected checksums match, the output files close successfully, and metadata is finalized with `completion_state=complete` and `run_status=ok`. Finalize that metadata atomically after writing the raw samples. Any later failure invalidates earlier samples from the same run for publication; preserve them for diagnosis. A crash, truncated record, missing trial, duplicate trial, or unfinished metadata makes the run incomplete. `summarize.py` must exclude the entire failed/incomplete run rather than averaging its surviving successful samples. Malformed records (including non-object JSON, duplicate fields, non-finite values, and invalid configuration types) exclude their entire run without aborting valid neighboring runs. The summary also verifies cross-engine controls and publication build/repetition requirements; the eligibility flag alone is insufficient. Unchecked standalone runs may receive a clearly labeled exploratory summary, but never enter the published comparison.
 
 - **Throughput:** fact input rows divided by query time. For Q3, the timer includes build cost but the numerator remains N; display M alongside it.
 - **Speedup:** baseline median divided by comparison median for the same logical input, query, platform, and build.
