@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "schedule_seed": 42,
+  "warmup": 3,
+  "repetitions": 15,
+  "defaults": {
+    "rows": 1000000,
+    "cutoff": 5000,
+    "groups": 1024,
+    "dim-rows": 100000,
+    "match-rate": "1.0",
+    "batch-size": 2048,
+    "threads": 1,
+    "seed": 42,
+    "memory-limit-mib": 4096
+  },
+  "cases": [
+    {
+      "query": "filter-sum",
+      "engine": "batch-soa",
+      "rows": 10000000,
+      "threads": 1
+    },
+    {
+      "query": "filter-sum",
+      "engine": "batch-soa",
+      "rows": 10000000,
+      "threads": 2
+    },
+    {
+      "query": "filter-sum",
+      "engine": "batch-soa",
+      "rows": 10000000,
+      "threads": 4
+    },
+    {
+      "query": "group-sum",
+      "engine": "batch-soa",
+      "rows": 10000000,
+      "threads": 1
+    },
+    {
+      "query": "group-sum",
+      "engine": "batch-soa",
+      "rows": 10000000,
+      "threads": 2
+    },
+    {
+      "query": "group-sum",
+      "engine": "batch-soa",
+      "rows": 10000000,
+      "threads": 4
+    },
+    {
+      "query": "join-group-sum",
+      "engine": "batch-soa",
+      "rows": 10000000,
+      "threads": 1
+    },
+    {
+      "query": "join-group-sum",
+      "engine": "batch-soa",
+      "rows": 10000000,
+      "threads": 2
+    },
+    {
+      "query": "join-group-sum",
+      "engine": "batch-soa",
+      "rows": 10000000,
+      "threads": 4
+    }
+  ]
+}
