@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Reject incomplete runs before computing any descriptive statistics."""
+
 import argparse
 import csv
 import hashlib
@@ -8,31 +9,33 @@ import math
 from pathlib import Path
 import statistics
 
-from records import (CONFIG_FIELDS, config_record, decode_record, hex_string, integer, object_record,
-                     read_record, semantic_key)
+from records import (
+    CONFIG_FIELDS,
+    ENGINES,
+    config_record,
+    decode_record,
+    hex_string,
+    integer,
+    object_record,
+    read_record,
+    result_counts,
+    semantic_key,
+)
 
 
 def canonical(value):
-    return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=True, allow_nan=False).encode()
+    return json.dumps(
+        value, sort_keys=True, separators=(",", ":"), ensure_ascii=True, allow_nan=False
+    ).encode()
 
 
 def manifest_id(manifest):
-    return hashlib.sha256(canonical({k: v for k, v in manifest.items() if k != "validation_id"})).hexdigest()
+    return hashlib.sha256(
+        canonical({k: v for k, v in manifest.items() if k != "validation_id"})
+    ).hexdigest()
 
 
-def load_run(raw_path, include_exploratory=False):
-    """Return (metadata, samples, eligible), or reject the entire run."""
-    raw_path = Path(raw_path)
-    meta_path = Path(str(raw_path) + ".meta.json")
-    meta = read_record(meta_path)
-    integer(meta.get("schema_version"), "metadata schema_version", 1, 1)
-    config_record(meta.get("config"))
-    if not isinstance(meta.get("run_id"), str) or not meta["run_id"]:
-        raise ValueError("missing run identity")
-    integer(meta.get("warmup"), "warmup")
-    if meta.get("completion_state") != "complete" or meta.get("run_status") != "ok":
-        raise ValueError("run failed or was not finalized")
-    samples = [decode_record(line) for line in raw_path.read_text(encoding="utf-8").splitlines() if line.strip()]
+def _validate_samples(meta, samples, metadata_name):
     requested = integer(meta.get("requested_samples"), "requested_samples", 1)
     integer(meta.get("completed_samples"), "completed_samples")
     integer(meta.get("repetitions_in_sample"), "repetitions_in_sample", 1, 10000)
@@ -46,7 +49,7 @@ def load_run(raw_path, include_exploratory=False):
         integer(sample.get("schema_version"), "sample schema_version", 1, 1)
         if sample.get("validation_id") != meta.get("validation_id"):
             raise ValueError("sample schema/validation identity mismatch")
-        if sample.get("metadata_path") != meta_path.name:
+        if sample.get("metadata_path") != metadata_name:
             raise ValueError("sample metadata reference mismatch")
         if not CONFIG_FIELDS.issubset(sample):
             raise ValueError("sample is missing configuration fields")
@@ -64,22 +67,38 @@ def load_run(raw_path, include_exploratory=False):
             raise ValueError("inconsistent normalized duration")
         hex_string(sample.get("input_checksum"), 16, "input_checksum")
         hex_string(sample.get("result_checksum"), 16, "result_checksum")
-        integer(sample.get("result_rows"), "result_rows", maximum=max(1, meta["config"]["rows"]))
+        result_counts(sample, meta["config"], timed=True)
         integer(sample.get("managed_query_peak_bytes"), "managed_query_peak_bytes")
         integer(sample.get("managed_input_bytes"), "managed_input_bytes")
+        if (
+            sample["managed_input_bytes"] + sample["managed_query_peak_bytes"]
+            > meta["config"]["memory_limit_bytes"]
+        ):
+            raise ValueError("managed memory exceeds the configured budget")
         if sample.get("process_peak_rss_bytes") is not None:
             integer(sample["process_peak_rss_bytes"], "process_peak_rss_bytes")
         if sample.get("validation_status") not in ("unchecked", "checksums_matched"):
             raise ValueError("invalid validation status")
-    for field in ("input_checksum", "result_checksum", "result_rows", "validation_status"):
+    for field in (
+        "input_checksum",
+        "result_checksum",
+        "result_rows",
+        "validation_status",
+        "selected_rows",
+        "joined_rows",
+        "managed_input_bytes",
+    ):
         if len({s.get(field) for s in samples}) != 1:
             raise ValueError(f"inconsistent {field} across samples")
+
+
+def _has_validated_results(meta, samples, directory):
     validated = False
     reference = meta.get("validation_manifest")
     if reference is not None:
         if not isinstance(reference, str) or not reference or Path(reference).name != reference:
             raise ValueError("validation manifest must be a local filename")
-        manifest = read_record(raw_path.parent / reference)
+        manifest = read_record(directory / reference)
         integer(manifest.get("schema_version"), "manifest schema_version", 1, 1)
         hex_string(manifest.get("validation_id"), 64, "validation_id")
         identities = object_record(manifest.get("binaries"), "executable identities")
@@ -87,7 +106,11 @@ def load_run(raw_path, include_exploratory=False):
             hex_string(identities.get(executable), 64, executable)
         source = object_record(manifest.get("source"), "source identity")
         revision = source.get("revision")
-        hex_string(revision, 64 if isinstance(revision, str) and len(revision) == 64 else 40, "source revision")
+        hex_string(
+            revision,
+            64 if isinstance(revision, str) and len(revision) == 64 else 40,
+            "source revision",
+        )
         if type(source.get("dirty")) is not bool:
             raise ValueError("source dirty flag must be boolean")
         entries = manifest.get("validated")
@@ -98,8 +121,10 @@ def load_run(raw_path, include_exploratory=False):
             config_record(entry.get("config"))
             hex_string(entry.get("input_checksum"), 16, "validated input checksum")
             hex_string(entry.get("result_checksum"), 16, "validated result checksum")
-            integer(entry.get("result_rows"), "validated result_rows", maximum=max(1, entry["config"]["rows"]))
-        if manifest_id(manifest) != meta.get("validation_id") or manifest.get("validation_id") != meta.get("validation_id"):
+            result_counts(entry, entry["config"])
+        if manifest_id(manifest) != meta.get("validation_id") or manifest.get(
+            "validation_id"
+        ) != meta.get("validation_id"):
             raise ValueError("validation manifest digest mismatch")
         if meta.get("binaries") != manifest.get("binaries"):
             raise ValueError("executable identity mismatch")
@@ -109,26 +134,78 @@ def load_run(raw_path, include_exploratory=False):
         if len(matches) != 1:
             raise ValueError("configuration absent or ambiguous in validation")
         expected = matches[0]
-        if any(s.get("input_checksum") != expected["input_checksum"] or
-               s.get("result_checksum") != expected["result_checksum"] or
-               s.get("result_rows") != expected["result_rows"] or
-               s.get("validation_status") != "checksums_matched" for s in samples):
+        if any(
+            s.get("input_checksum") != expected["input_checksum"]
+            or s.get("result_checksum") != expected["result_checksum"]
+            or s.get("result_rows") != expected["result_rows"]
+            or s.get("validation_status") != "checksums_matched"
+            for s in samples
+        ):
             raise ValueError("sample does not match validated results")
-        controls = [entry for entry in entries if semantic_key(entry["config"]) == semantic_key(meta["config"])]
-        engines = {entry["config"]["engine"] for entry in controls}
-        if len(engines) < 2 or (meta["config"]["engine"] == "batch-soa" and "row-soa" not in engines):
-            raise ValueError("validation is missing a cross-engine control")
-        if any(any(entry[field] != expected[field] for field in
-                   ("input_checksum", "result_checksum", "result_rows")) for entry in controls):
+        for field in ("selected_rows", "joined_rows"):
+            if any(s.get(field) is not None and s[field] != expected[field] for s in samples):
+                raise ValueError("sample row counts differ from validation")
+        controls = [
+            entry
+            for entry in entries
+            if semantic_key(entry["config"]) == semantic_key(meta["config"])
+        ]
+        engines = {
+            entry["config"]["engine"] for entry in controls if entry["config"]["threads"] == 1
+        }
+        if engines != set(ENGINES):
+            raise ValueError(
+                "validation requires single-thread cross-engine controls for all three engines"
+            )
+        if any(
+            any(
+                entry[field] != expected[field]
+                for field in (
+                    "input_checksum",
+                    "result_checksum",
+                    "result_rows",
+                    "selected_rows",
+                    "joined_rows",
+                )
+            )
+            for entry in controls
+        ):
             raise ValueError("cross-engine validation records disagree")
         validated = True
+    return validated
+
+
+def load_run(raw_path, include_exploratory=False):
+    """Return (metadata, samples, eligible), or reject the entire run."""
+    raw_path = Path(raw_path)
+    meta_path = Path(str(raw_path) + ".meta.json")
+    meta = read_record(meta_path)
+    integer(meta.get("schema_version"), "metadata schema_version", 1, 1)
+    config_record(meta.get("config"))
+    if not isinstance(meta.get("run_id"), str) or not meta["run_id"]:
+        raise ValueError("missing run identity")
+    integer(meta.get("warmup"), "warmup")
+    if meta.get("completion_state") != "complete" or meta.get("run_status") != "ok":
+        raise ValueError("run failed or was not finalized")
+    samples = [
+        decode_record(line)
+        for line in raw_path.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+    _validate_samples(meta, samples, meta_path.name)
+    validated = _has_validated_results(meta, samples, raw_path.parent)
     eligible = validated and meta.get("publication_eligible") is True
     if eligible:
         environment = object_record(meta.get("environment"), "environment")
         build = object_record(environment.get("cmake"), "build configuration")
-        if (meta["warmup"] < 3 or requested < 15 or meta["source"]["dirty"] or
-                build.get("CMAKE_BUILD_TYPE") != "Release" or build.get("VQUERY_SANITIZER") != "" or
-                build.get("VQUERY_BUILD_TESTS") != "ON"):
+        if (
+            meta["warmup"] < 3
+            or meta["requested_samples"] < 15
+            or meta["source"]["dirty"]
+            or build.get("CMAKE_BUILD_TYPE") != "Release"
+            or build.get("VQUERY_SANITIZER") != ""
+            or build.get("VQUERY_BUILD_TESTS") != "ON"
+        ):
             raise ValueError("publication metadata does not satisfy the timing/build protocol")
     if not eligible and not include_exploratory:
         raise ValueError("exploratory run; use --include-exploratory to inspect")
@@ -148,11 +225,17 @@ def summarize(directory, include_exploratory=False):
                 q1, _, q3 = statistics.quantiles(values, n=4, method="inclusive")
                 iqr = q3 - q1
             row = dict(meta["config"])
-            row.update(run_id=meta["run_id"], samples=len(values), median_ns=median,
-                       iqr_ns=iqr, high_variability=iqr is not None and iqr / median > .10,
-                       input_rows_per_second=row["rows"] * 1e9 / median,
-                       managed_query_peak_bytes=max(s["managed_query_peak_bytes"] for s in samples),
-                       publication_eligible=eligible, raw_file=path.name)
+            row.update(
+                run_id=meta["run_id"],
+                samples=len(values),
+                median_ns=median,
+                iqr_ns=iqr,
+                high_variability=iqr is not None and iqr / median > 0.10,
+                input_rows_per_second=row["rows"] * 1e9 / median,
+                managed_query_peak_bytes=max(s["managed_query_peak_bytes"] for s in samples),
+                publication_eligible=eligible,
+                raw_file=path.name,
+            )
             rows.append(row)
         except (ValueError, KeyError, TypeError, OverflowError, OSError) as error:
             rejected.append({"file": path.name, "reason": str(error)})
@@ -163,7 +246,9 @@ def summarize(directory, include_exploratory=False):
             writer.writerows(rows)
     else:
         (directory / "summary.csv").unlink(missing_ok=True)
-    (directory / "summary.json").write_text(json.dumps({"runs": rows, "excluded": rejected}, indent=2) + "\n")
+    (directory / "summary.json").write_text(
+        json.dumps({"runs": rows, "excluded": rejected}, indent=2) + "\n"
+    )
     return rows, rejected
 
 

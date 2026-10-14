@@ -12,6 +12,17 @@ public:
       throw Error(ErrorCode::invalid_argument, "hash capacity must be a power of two");
     rehash(capacity);
   }
+  HashTable(const HashTable &) = default;
+  HashTable(HashTable &&) = default;
+  HashTable &operator=(HashTable &&) = default;
+  HashTable &operator=(const HashTable &other) {
+    // Buffer copy assignment alone would retain the destination's old allocator.
+    if (this != &other) {
+      HashTable copy(other);
+      *this = std::move(copy);
+    }
+    return *this;
+  }
   static std::size_t capacity_for(std::size_t entries) {
     std::size_t cap = 1;
     while (entries > load_limit(cap))

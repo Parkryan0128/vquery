@@ -275,3 +275,171 @@ TEST(Execution, CancellationIsObservedBetweenEmptyPhysicalBatches) {
   EXPECT_FALSE(scan->next(batch));
   scan->close();
 }
+
+TEST(Execution, GeneratedDistributionsMatchTheIndependentOracle) {
+  for (auto q : {Query::filter_sum, Query::group_sum, Query::join_group_sum}) {
+    for (auto distribution : {Distribution::uniform, Distribution::hot_key_90}) {
+      Config c;
+      c.query = q;
+      c.distribution = distribution;
+      c.rows = 513;
+      c.dim_rows = 31;
+      c.groups = 1000;
+      c.match_rate_bps = 5000;
+      c.seed = UINT64_MAX;
+      auto soa = generate(c, memory());
+      c.engine = Engine::row_aos;
+      auto aos = generate(c, memory());
+      EXPECT_EQ(soa.input_checksum, aos.input_checksum);
+      std::vector<FactRow> facts;
+      std::vector<CustomerRow> customers;
+      for (std::size_t i = 0; i < soa.fact_count; ++i)
+        facts.push_back(soa.fact(i));
+      for (std::size_t i = 0; i < soa.customer_count; ++i)
+        customers.push_back(soa.customer(i));
+      for (auto cutoff : {0u, 1u, 5000u, 10000u})
+        all_modes(q, facts, customers, cutoff, 256);
+    }
+  }
+}
+
+TEST(Execution, EmptyDimensionAndDisjointWorkerGroups) {
+  std::vector<FactRow> facts;
+  for (std::uint32_t i = 0; i < 1025; ++i)
+    facts.push_back({i, i, 1'000'000, 0});
+  all_modes(Query::join_group_sum, facts, {}, 10000, 256);
+  all_modes(Query::group_sum, facts, {}, 10000, 256);
+}
+
+TEST(Execution, AllocationFailuresCoverWorkersMergeAndResultMaterialization) {
+  for (auto q : {Query::filter_sum, Query::group_sum, Query::join_group_sum}) {
+    for (unsigned threads : {1u, 2u, 4u}) {
+      SCOPED_TRACE(static_cast<int>(q));
+      SCOPED_TRACE(threads);
+      auto budget = memory();
+      std::vector<FactRow> facts;
+      for (std::uint32_t i = 0; i < 1025; ++i)
+        facts.push_back({0, i, 1, 0});
+      const std::vector<CustomerRow> customers = q == Query::join_group_sum
+                                                     ? std::vector<CustomerRow>{{0, 15}}
+                                                     : std::vector<CustomerRow>{};
+      auto table = from_fixture(Engine::batch_soa, q, facts, customers, budget);
+      const auto input_bytes = budget->snapshot().input;
+      ExecutionContext context{Engine::batch_soa, 256, threads, budget};
+      bool completed = false;
+      for (std::size_t fail = 0; fail < 100; ++fail) {
+        budget->fail_after(fail);
+        try {
+          auto result = execute({q, 10000}, table, context);
+          canonicalize(result);
+          EXPECT_EQ(std::vector<ResultRow>(result.rows.begin(), result.rows.end()),
+                    reference(q, 10000, facts, customers));
+          completed = true;
+        } catch (const Error &error) {
+          EXPECT_EQ(error.code(), ErrorCode::allocation_failed);
+        }
+        EXPECT_EQ(budget->snapshot().query, 0u);
+        EXPECT_EQ(budget->snapshot().input, input_bytes);
+        if (completed)
+          break;
+      }
+      EXPECT_TRUE(completed) << "failure sweep must reach a successful execution";
+    }
+  }
+}
+
+TEST(Execution, ResultOutlivesTablesAndContext) {
+  QueryResult retained{Query::group_sum, {}};
+  std::weak_ptr<MemoryBudget> owner;
+  {
+    auto budget = memory();
+    owner = budget;
+    const std::vector<FactRow> facts{{0, UINT32_MAX, 42, 0}};
+    auto table = from_fixture(Engine::batch_soa, Query::group_sum, facts, {}, budget);
+    ExecutionContext context{Engine::batch_soa, 256, 4, budget};
+    retained = execute({Query::group_sum, 10000}, table, context);
+  }
+  EXPECT_FALSE(owner.expired());
+  ASSERT_EQ(retained.rows.size(), 1u);
+  EXPECT_EQ(retained.rows[0], (ResultRow{UINT32_MAX, 1, 42}));
+  EXPECT_EQ(owner.lock()->snapshot().input, 0u);
+  retained.rows = Buffer<ResultRow>{};
+  EXPECT_TRUE(owner.expired());
+}
+
+TEST(Execution, RejectsMismatchedContextBeforeAllocating) {
+  auto budget = memory();
+  const std::vector<FactRow> facts{{0, 0, 1, 0}};
+  auto table = from_fixture(Engine::batch_soa, Query::filter_sum, facts, {}, budget);
+  ExecutionContext context{Engine::batch_soa, 256, 1, memory()};
+  EXPECT_THROW(execute({Query::filter_sum, 5000}, table, context), Error);
+  context.budget = budget;
+  EXPECT_THROW(execute({Query::group_sum, 5000}, table, context), Error);
+  EXPECT_THROW(execute({Query::filter_sum, 10001}, table, context), Error);
+  context.engine = Engine::row_aos;
+  EXPECT_THROW(execute({Query::filter_sum, 5000}, table, context), Error);
+  context.engine = Engine::batch_soa;
+  context.threads = 3;
+  EXPECT_THROW(execute({Query::filter_sum, 5000}, table, context), Error);
+  context.threads = 1;
+  table.columns.amount.clear();
+  EXPECT_THROW(execute({Query::filter_sum, 5000}, table, context), Error);
+  EXPECT_EQ(budget->snapshot().query, 0u);
+}
+
+TEST(Execution, PipelinesRespectSubrangesAndReopenAfterPartialFailure) {
+  const std::vector<FactRow> facts{{0, 0, 100, 0}, {0, 1, 2, 0}, {1, 2, 3, 0}, {0, 3, 100, 0}};
+  const std::vector<CustomerRow> customers{{0, 15}};
+  for (auto q : {Query::filter_sum, Query::group_sum, Query::join_group_sum}) {
+    for (auto engine : {Engine::row_aos, Engine::row_soa, Engine::batch_soa}) {
+      auto budget = memory();
+      auto table =
+          from_fixture(engine, q, facts,
+                       q == Query::join_group_sum ? customers : std::vector<CustomerRow>{}, budget);
+      std::unique_ptr<JoinTable> join;
+      if (q == Query::join_group_sum) {
+        join = std::make_unique<JoinTable>(budget);
+        join->insert_unique(0, 15);
+      }
+      const auto baseline = budget->snapshot().query;
+      ExecutionContext context{engine, 256, 1, budget};
+      if (engine == Engine::batch_soa) {
+        auto source = batch_pipeline(table, {q, 10000}, 1, 3, join.get());
+        // Fail both before and after Join allocates its first output column.
+        for (std::size_t fail = 0; fail < (join ? 3u : 1u); ++fail) {
+          budget->fail_after(fail);
+          EXPECT_THROW(source->open(context), std::bad_alloc);
+          source->close();
+          source->close();
+          EXPECT_EQ(budget->snapshot().query, baseline);
+        }
+        budget->fail_after(SIZE_MAX);
+        for (int pass = 0; pass < 2; ++pass) {
+          source->open(context);
+          Batch out;
+          std::int64_t sum = 0;
+          while (source->next(out))
+            for (std::size_t i = 0; i < out.logical_count; ++i)
+              sum += out.amount[out.position(i)];
+          EXPECT_EQ(sum, join ? 2 : 5);
+          EXPECT_FALSE(source->next(out));
+          source->close();
+          EXPECT_EQ(budget->snapshot().query, baseline);
+        }
+      } else {
+        auto source = row_pipeline(table, {q, 10000}, 1, 3, join.get());
+        for (int pass = 0; pass < 2; ++pass) {
+          source->open(context);
+          Row out;
+          std::int64_t sum = 0;
+          while (source->next(out))
+            sum += out.amount;
+          EXPECT_EQ(sum, join ? 2 : 5);
+          EXPECT_FALSE(source->next(out));
+          source->close();
+          source->close();
+        }
+      }
+    }
+  }
+}

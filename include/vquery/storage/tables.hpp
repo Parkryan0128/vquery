@@ -23,6 +23,17 @@ struct Tables {
   Buffer<std::uint32_t> customer_keys, regions;
   std::uint64_t input_checksum{};
   Tables(std::shared_ptr<MemoryBudget> memory, Engine engine, Query q);
+  Tables(const Tables &) = default;
+  Tables(Tables &&) noexcept = default;
+  Tables &operator=(Tables &&) noexcept = default;
+  Tables &operator=(const Tables &other) {
+    // Copy all buffers before replacing either the data or its budget owner.
+    if (this != &other) {
+      Tables copy(other);
+      *this = std::move(copy);
+    }
+    return *this;
+  }
   void allocate(std::size_t n, std::size_t m);
   void set_fact(std::size_t i, const FactRow &row);
   void set_customer(std::size_t i, const CustomerRow &row);

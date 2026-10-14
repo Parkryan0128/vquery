@@ -1,4 +1,4 @@
-# Frozen implementation decisions
+# Data encoding and implementation choices
 
 These choices define generator version 1 and serialization version 1. Change the version when changing logical generated values or canonical encodings. Benchmark observations are not part of this document.
 
@@ -42,9 +42,9 @@ Result: text `vquery-result-v1`, text CLI query name, u64 result-row count, then
 
 A validation ID is SHA-256 of the manifest excluding `validation_id`, encoded using Python `json.dumps(sort_keys=True, separators=(",", ":"), ensure_ascii=True)` as UTF-8. The manifest binds the complete normalized configuration, result/input checksums, source revision/dirty state, and SHA-256 identities of both executables. Preserve `validation.json` beside the run files.
 
-## Deliberate implementation refinements
+## Implementation choices
 
-- Keep row and batch operators in one implementation file and worker coordination with the aggregate sink until size justifies further splitting. There are no empty placeholder modules.
+- Row and batch operators share one implementation file. Worker coordination lives with the aggregate sink in `execute.cpp`.
 - `execute(QuerySpec, const Tables&, ExecutionContext&)` performs constant-time defensive checks inside the timer. Generation, full fixture value validation, and checksum computation remain outside it.
 - The budget uses a mutex around allocation reservations/releases. Query loops do not lock for each row. This makes concurrent reservations atomic; it measures requested buffer capacities, not allocator overhead or RSS.
 - Query-local hash state, batch buffers, and result storage are budgeted. Operator objects, thread stacks/runtime, JSON text, small fixed control state, and Python preflight memory are excluded and must not be confused with a process limit.
@@ -52,7 +52,6 @@ A validation ID is SHA-256 of the manifest excluding `validation_id`, encoded us
 - Raw metadata references are relative filenames so runs remain valid after moving a complete directory. Raw files are created exclusively; completion metadata is replaced atomically after successful close. This is crash-detection metadata, not an fsync-based durability guarantee.
 - Unknown hardware properties are null. Parallel publication requires a detected physical-core budget; exploratory checks can still run on a restricted machine.
 - Linux is the performance-study and sanitizer validation platform. macOS/ARM64 is supported for development. Local sandbox restrictions may prevent sanitizer runtime startup; this is not a passing sanitizer result.
-
 - macOS CI uses the [macOS 26 ARM64 runner](https://github.com/actions/runner-images#available-images). The macOS 15 image failed the `std::jthread` configure probe even with Apple Clang 17, so compiler version alone is not a sufficient compatibility check. Keep the probe enabled.
 
 ## Review follow-up

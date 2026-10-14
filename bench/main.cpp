@@ -1,3 +1,4 @@
+#include "calibration.hpp"
 #include "options.hpp"
 #include <algorithm>
 #include <chrono>
@@ -27,6 +28,8 @@ public:
     if (file_)
       std::fclose(file_);
   }
+  NewFile(const NewFile &) = delete;
+  NewFile &operator=(const NewFile &) = delete;
   void write(const std::string &text) {
     if (std::fwrite(text.data(), 1, text.size(), file_) != text.size() || std::fflush(file_) != 0)
       throw Error(ErrorCode::output_failed, "failed to write output");
@@ -143,19 +146,7 @@ int run(const cli::Options &options) {
     warmups.reserve(options.warmup);
     for (std::size_t i = 0; i < options.warmup; ++i)
       warmups.push_back(measure(options, table, context).ns);
-    if (!warmups.empty()) {
-      std::sort(warmups.begin(), warmups.end());
-      auto median = warmups[warmups.size() / 2];
-      if (warmups.size() % 2 == 0)
-        median = warmups[warmups.size() / 2 - 1] + (median - warmups[warmups.size() / 2 - 1]) / 2;
-      if (median < 10'000'000) {
-        k = static_cast<std::size_t>((100'000'000 + median - 1) / median);
-        if (k > 10000)
-          throw Error(ErrorCode::invalid_argument,
-                      "automatic calibration exceeds 10000 queries per sample; increase rows or "
-                      "use --warmup 0 for exploration");
-      }
-    }
+    k = bench::repetitions_per_sample(warmups);
     for (std::size_t trial = 0; trial < options.repetitions; ++trial) {
       std::uint64_t total = 0;
       std::size_t peak = 0;
@@ -211,6 +202,10 @@ int run(const cli::Options &options) {
     }
     try {
       output.close();
+    } catch (...) {
+      // A buffered write may fail again on close; still try to record the failure.
+    }
+    try {
       replace_metadata(metadata_path, metadata(options, id, "failed", code, completed, k, message),
                        id);
     } catch (...) {
@@ -224,7 +219,9 @@ int main(int argc, char **argv) {
   try {
     auto options = vquery::cli::parse(argc, argv, true);
     if (options.help) {
-      std::cout << vquery::cli::help(true);
+      std::cout << vquery::cli::help(true) << std::flush;
+      if (!std::cout)
+        throw vquery::Error(vquery::ErrorCode::output_failed, "help output failed");
       return 0;
     }
     return run(options);

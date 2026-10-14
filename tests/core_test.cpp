@@ -1,7 +1,9 @@
 #include "vquery/hash/hash_table.hpp"
 #include "vquery/storage/tables.hpp"
+#include <barrier>
 #include <gtest/gtest.h>
 #include <limits>
+#include <thread>
 
 using namespace vquery;
 namespace {
@@ -179,4 +181,209 @@ TEST(Hash, UniqueInsertCanCopyAnExistingValueAcrossGrowth) {
   ASSERT_NE(table.find(716), nullptr);
   EXPECT_EQ(table.find(716)->count, 52u);
   EXPECT_EQ(table.find(716)->sum, 4200);
+}
+
+TEST(Storage, CopyAssignmentTransfersTheBudgetWithTheBuffers) {
+  for (auto engine : {Engine::row_aos, Engine::batch_soa}) {
+    auto source_budget = memory(), old_budget = memory();
+    {
+      const std::vector<FactRow> facts{{7, 9, 123, 4}};
+      const std::vector<CustomerRow> customers{{7, 15}};
+      auto source = from_fixture(engine, Query::join_group_sum, facts, customers, source_budget);
+      auto destination = from_fixture(engine, Query::join_group_sum, facts, customers, old_budget);
+      const auto input_bytes = source_budget->snapshot().input;
+      destination = source;
+      EXPECT_EQ(destination.budget, source_budget);
+      EXPECT_EQ(source_budget->snapshot().input, 2 * input_bytes);
+      EXPECT_EQ(old_budget->snapshot().total, 0u);
+      EXPECT_EQ(destination.fact(0).amount, 123);
+      EXPECT_EQ(destination.customer(0).region_id, 15u);
+      destination.set_fact(0, {7, 9, 456, 4});
+      EXPECT_EQ(source.fact(0).amount, 123);
+    }
+    EXPECT_EQ(source_budget->snapshot().total, 0u);
+    EXPECT_EQ(old_budget->snapshot().total, 0u);
+  }
+}
+
+TEST(Hash, CopyAssignmentTransfersTheBudgetAndCanGrow) {
+  auto source_budget = memory(), old_budget = memory();
+  {
+    HashTable<int> source(source_budget), destination(old_budget);
+    source.insert_unique(42, 7);
+    const auto bytes = source_budget->snapshot().query;
+    destination = source;
+    EXPECT_EQ(source_budget->snapshot().query, 2 * bytes);
+    EXPECT_EQ(old_budget->snapshot().query, 0u);
+    // A later rehash must continue charging the same owner.
+    for (std::uint32_t i = 0; i < 1000; ++i)
+      destination.find_or_insert(i) = static_cast<int>(i);
+    EXPECT_EQ(*source.find(42), 7);
+    EXPECT_EQ(*destination.find(42), 42);
+    EXPECT_EQ(old_budget->snapshot().query, 0u);
+  }
+  EXPECT_EQ(source_budget->snapshot().total, 0u);
+  EXPECT_EQ(old_budget->snapshot().total, 0u);
+}
+
+TEST(Storage, FailedCopyAssignmentPreservesTheDestination) {
+  auto source_budget = memory(), destination_budget = memory();
+  const std::vector<FactRow> facts{{0, 0, 42, 0}};
+  auto source = from_fixture(Engine::batch_soa, Query::group_sum, facts, {}, source_budget);
+  auto destination =
+      from_fixture(Engine::row_aos, Query::filter_sum, facts, {}, destination_budget);
+  const auto before = destination_budget->snapshot().total;
+  source_budget->fail_after(1);
+  EXPECT_THROW(destination = source, std::bad_alloc);
+  EXPECT_EQ(destination.budget, destination_budget);
+  EXPECT_EQ(destination.query, Query::filter_sum);
+  EXPECT_TRUE(destination.aos);
+  EXPECT_NO_THROW(destination.validate_values());
+  EXPECT_EQ(destination_budget->snapshot().total, before);
+  EXPECT_EQ(destination.fact(0).amount, 42);
+}
+
+TEST(Hash, FailedCopyAssignmentLeavesBothTablesUsable) {
+  auto a = memory(), b = memory();
+  HashTable<int> source(a), destination(b);
+  source.insert_unique(1, 10);
+  destination.insert_unique(2, 20);
+  const auto a_bytes = a->snapshot().query, b_bytes = b->snapshot().query;
+  a->fail_after(1);
+  EXPECT_THROW(destination = source, std::bad_alloc);
+  EXPECT_EQ(*destination.find(2), 20);
+  EXPECT_EQ(destination.find(1), nullptr);
+  EXPECT_EQ(*source.find(1), 10);
+  EXPECT_EQ(a->snapshot().query, a_bytes);
+  EXPECT_EQ(b->snapshot().query, b_bytes);
+}
+
+TEST(Hash, SmallCapacityStillLeavesAnEmptyProbeSlot) {
+  auto budget = memory();
+  EXPECT_THROW(HashTable<int>(budget, 0), Error);
+  EXPECT_THROW(HashTable<int>(budget, 3), Error);
+  HashTable<int> table(budget, 1);
+  EXPECT_EQ(table.find(0), nullptr);
+  table.insert_unique(0, 10);
+  EXPECT_EQ(*table.find(0), 10);
+  EXPECT_EQ(table.find(UINT32_MAX), nullptr);
+  table.insert_unique(UINT32_MAX, 20);
+  EXPECT_EQ(*table.find(UINT32_MAX), 20);
+}
+
+TEST(Storage, RejectsInvalidFixturesAndReleasesPartialAllocations) {
+  for (auto engine : {Engine::row_aos, Engine::row_soa, Engine::batch_soa}) {
+    auto budget = memory();
+    for (auto fact : {FactRow{0, 0, -1, 0}, FactRow{0, 0, 1'000'001, 0}, FactRow{0, 0, 0, 10000}}) {
+      const std::vector<FactRow> facts{fact};
+      EXPECT_THROW(from_fixture(engine, Query::filter_sum, facts, {}, budget), Error);
+      EXPECT_EQ(budget->snapshot().total, 0u);
+    }
+    const std::vector<CustomerRow> customers{{0, 16}};
+    EXPECT_THROW(from_fixture(engine, Query::join_group_sum, {}, customers, budget), Error);
+    EXPECT_THROW(from_fixture(engine, Query::filter_sum, {}, customers, budget), Error);
+    EXPECT_EQ(budget->snapshot().total, 0u);
+    Tables table(budget, engine, Query::join_group_sum);
+    EXPECT_THROW(table.allocate(100'000'001, 0), Error);
+    EXPECT_THROW(table.allocate(0, 10'000'001), Error);
+  }
+  EXPECT_THROW((BudgetAllocator<int>(nullptr, MemoryCategory::input)), Error);
+  for (std::size_t fail = 0; fail < 6; ++fail) {
+    auto budget = memory();
+    budget->fail_after(fail);
+    Config c;
+    c.rows = 10;
+    c.dim_rows = 2;
+    c.query = Query::join_group_sum;
+    EXPECT_THROW(generate(c, budget), std::bad_alloc);
+    EXPECT_EQ(budget->snapshot().total, 0u);
+  }
+}
+
+TEST(Generator, SkewSingletonDomainsAndJoinMatchBoundaries) {
+  for (auto distribution : {Distribution::uniform, Distribution::hot_key_90}) {
+    for (std::uint64_t seed : {UINT64_C(0), UINT64_MAX}) {
+      Config c;
+      c.rows = 10000;
+      c.seed = seed;
+      c.distribution = distribution;
+      c.query = Query::group_sum;
+      for (auto groups : {1u, 17u}) {
+        c.groups = groups;
+        auto table = generate(c, memory());
+        std::size_t zeros = 0;
+        for (std::size_t i = 0; i < c.rows; ++i) {
+          EXPECT_LT(table.fact(i).group_id, groups);
+          zeros += table.fact(i).group_id == 0;
+        }
+        if (groups == 1)
+          EXPECT_EQ(zeros, c.rows);
+        else if (distribution == Distribution::hot_key_90) {
+          EXPECT_GT(zeros, 8500u);
+          EXPECT_LT(zeros, 9500u);
+        } else
+          EXPECT_LT(zeros, 1000u);
+      }
+      c.query = Query::join_group_sum;
+      for (auto dim : {0u, 1u, 17u}) {
+        c.dim_rows = dim;
+        for (auto match : {0u, 1u, 5000u, 9999u, 10000u}) {
+          if (dim == 0 && match != 0)
+            continue;
+          c.match_rate_bps = match;
+          auto table = generate(c, memory());
+          std::size_t matches = 0, hot = 0;
+          for (std::size_t i = 0; i < c.rows; ++i) {
+            const auto key = table.fact(i).customer_id;
+            matches += key < dim;
+            hot += key == 0;
+          }
+          if (match == 0)
+            EXPECT_EQ(matches, 0u);
+          if (match == 10000) {
+            EXPECT_EQ(matches, c.rows);
+            if (dim == 1)
+              EXPECT_EQ(hot, c.rows);
+            else if (distribution == Distribution::hot_key_90) {
+              EXPECT_GT(hot, 8500u);
+              EXPECT_LT(hot, 9500u);
+            }
+          }
+          if (match == 5000) {
+            EXPECT_GT(matches, 4500u);
+            EXPECT_LT(matches, 5500u);
+          }
+          EXPECT_NO_THROW(table.validate_values());
+        }
+      }
+    }
+  }
+}
+
+TEST(Memory, ConcurrentReservationsCannotExceedOneSharedBudget) {
+  auto budget = memory(sizeof(std::uint64_t));
+  std::array<Buffer<std::uint64_t>, 4> buffers;
+  std::array<bool, 4> rejected{};
+  std::array<std::jthread, 4> workers;
+  std::barrier gate(5);
+  for (std::size_t i = 0; i < workers.size(); ++i) {
+    buffers[i] = make_buffer<std::uint64_t>(budget);
+    workers[i] = std::jthread([&, i] {
+      gate.arrive_and_wait();
+      try {
+        buffers[i].resize(1);
+      } catch (const Error &error) {
+        rejected[i] = error.code() == ErrorCode::memory_limit;
+      }
+    });
+  }
+  gate.arrive_and_wait();
+  for (auto &worker : workers)
+    worker.join();
+  EXPECT_EQ(std::count(rejected.begin(), rejected.end(), true), 3);
+  EXPECT_EQ(budget->snapshot().total, sizeof(std::uint64_t));
+  EXPECT_EQ(budget->snapshot().query_peak, sizeof(std::uint64_t));
+  for (auto &buffer : buffers)
+    buffer = make_buffer<std::uint64_t>(budget);
+  EXPECT_EQ(budget->snapshot().total, 0u);
 }
