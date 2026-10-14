@@ -16,8 +16,8 @@ jobs:
       CC: ${{ matrix.compiler == 'clang' && 'clang-18' || 'gcc-13' }}
       CXX: ${{ matrix.compiler == 'clang' && 'clang++-18' || 'g++-13' }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-python@v7.0.0
         with:
           python-version: '3.12'
       - run: cmake --preset ${{ matrix.preset }}
@@ -36,8 +36,8 @@ jobs:
       UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
       TSAN_OPTIONS: halt_on_error=1
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-python@v7.0.0
         with:
           python-version: '3.12'
       # LLVM 18 TSan needs a compatible address layout on these hosted runners.
@@ -49,8 +49,8 @@ jobs:
   macos:
     runs-on: macos-26
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-python@v7.0.0
         with:
           python-version: '3.12'
       - run: cmake --preset debug
