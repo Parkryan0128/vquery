@@ -175,8 +175,10 @@ def result_counts(record, config, *, timed=False):
         integer(joined, "joined_rows", maximum=limit if selected is None else selected)
         if config["match_rate_bps"] == 0 and joined != 0:
             raise ValueError("zero match rate must produce zero joined rows")
-        if config["match_rate_bps"] == 10000 and selected is not None and joined != selected:
-            raise ValueError("full match rate must retain every selected row")
+        if config["match_rate_bps"] == 10000:
+            expected = rows if config["cutoff"] == 10000 else selected
+            if expected is not None and joined != expected:
+                raise ValueError("full match rate must retain every selected row")
     elif joined is not None:
         raise ValueError("joined_rows only applies to join-group-sum")
     count = integer(record.get("result_rows"), "result_rows", maximum=max(1, rows))

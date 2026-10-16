@@ -93,7 +93,7 @@ def load_study(directory):
                         (
                             s["process_peak_rss_bytes"]
                             for s in samples
-                            if s["process_peak_rss_bytes"] is not None
+                            if s.get("process_peak_rss_bytes") is not None
                         ),
                         default=None,
                     ),

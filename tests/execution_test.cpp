@@ -367,6 +367,32 @@ TEST(Execution, ResultOutlivesTablesAndContext) {
   EXPECT_TRUE(owner.expired());
 }
 
+TEST(Execution, TableCanBeQueriedAfterResizeExceedsBudget) {
+  const std::vector<FactRow> facts{{7, 0, 123, 0}, {8, 0, 456, 0}};
+  const std::vector<CustomerRow> customers{{7, 15}, {8, 3}};
+  const auto expected = reference(Query::join_group_sum, 10000, facts, customers);
+  for (auto engine : {Engine::row_aos, Engine::row_soa, Engine::batch_soa}) {
+    auto budget = std::make_shared<MemoryBudget>(256 * 1024);
+    {
+      auto table = from_fixture(engine, Query::join_group_sum, facts, customers, budget);
+      try {
+        table.allocate(1, 100000);
+        FAIL() << "customer growth must exceed the memory budget";
+      } catch (const Error &error) {
+        EXPECT_EQ(error.code(), ErrorCode::memory_limit);
+      }
+      ExecutionContext context{engine, 256, engine == Engine::batch_soa ? 4u : 1u, budget};
+      {
+        auto result = execute({Query::join_group_sum, 10000}, table, context);
+        canonicalize(result);
+        EXPECT_EQ(std::vector<ResultRow>(result.rows.begin(), result.rows.end()), expected);
+      }
+      EXPECT_EQ(budget->snapshot().query, 0u);
+    }
+    EXPECT_EQ(budget->snapshot().total, 0u);
+  }
+}
+
 TEST(Execution, RejectsMismatchedContextBeforeAllocating) {
   auto budget = memory();
   const std::vector<FactRow> facts{{0, 0, 1, 0}};

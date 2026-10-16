@@ -71,6 +71,8 @@ status, metadata_path
 
 Checksums are 16 lowercase hexadecimal digits; validation IDs are 64. Inapplicable fields are null. Match rates are integer basis points in records. Q3 samples leave `selected_rows` null to avoid another scan; preflight records that count. Q1/Q2 samples have null `joined_rows`. With K>1, query peak is the maximum among the K invocations.
 
+At cutoff 10000 and a full generated match rate, Q3 must join every fact, even in unchecked exploratory records. The study reader accepts an absent or null RSS observation and reports the maximum available value, or null when none is available.
+
 A summary rejects the entire run for failed/incomplete metadata, missing/extra/duplicate trials, invalid JSON or field types, inconsistent durations/configurations/counts, budget violations, stale identities, or disagreeing/missing controls. It continues inspecting other run files. A publication flag also requires clean-source, tested Release metadata, at least three warmups, and 15 samples. Exploratory results need `--include-exploratory` when summarized directly.
 
 The study reader in `scripts/study.py` also matches each suite's run configurations, warmup count, sample count, and schedule seed against its archived experiment manifest. Duplicate configurations, mixed hosts/builds, and core engine comparisons with different input settings are rejected. `scripts/plot_study.py` uses this validated data to regenerate figures; the validation tests do not require Matplotlib.

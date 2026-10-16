@@ -243,6 +243,50 @@ TEST(Storage, FailedCopyAssignmentPreservesTheDestination) {
   EXPECT_EQ(destination.fact(0).amount, 42);
 }
 
+TEST(Storage, FailedResizePreservesRowsAndAllowsRetry) {
+  const std::vector<FactRow> facts{{7, 9, 123, 4}, {8, 10, 456, 5}};
+  const std::vector<CustomerRow> customers{{7, 15}, {8, 3}};
+  for (auto engine : {Engine::row_aos, Engine::row_soa, Engine::batch_soa}) {
+    // Growing both tables exercises every allocation. Shrinking facts while
+    // growing customers must not discard fact rows before an allocation fails.
+    for (const auto n : {1u, 513u}) {
+      bool completed = false;
+      for (unsigned fail = 0; fail < 16 && !completed; ++fail) {
+        SCOPED_TRACE(static_cast<int>(engine));
+        SCOPED_TRACE(n);
+        SCOPED_TRACE(fail);
+        auto budget = memory();
+        {
+          auto table = from_fixture(engine, Query::join_group_sum, facts, customers, budget);
+          const auto checksum = table.input_checksum;
+          budget->fail_after(fail);
+          try {
+            table.allocate(n, 17);
+            completed = true;
+          } catch (const std::bad_alloc &) {
+            ASSERT_EQ(table.fact_count, facts.size());
+            ASSERT_EQ(table.customer_count, customers.size());
+            ASSERT_NO_THROW(table.validate_values());
+            table.update_checksum();
+            EXPECT_EQ(table.input_checksum, checksum);
+            budget->fail_after(SIZE_MAX);
+            table.allocate(n, 17);
+          }
+          EXPECT_EQ(table.fact_count, n);
+          EXPECT_EQ(table.customer_count, 17u);
+          EXPECT_NO_THROW(table.validate_shape());
+          EXPECT_EQ(table.fact(0).amount, facts[0].amount);
+          EXPECT_EQ(table.customer(0).region_id, customers[0].region_id);
+          table.allocate(0, 0);
+          EXPECT_NO_THROW(table.validate_shape());
+        }
+        EXPECT_EQ(budget->snapshot().total, 0u);
+      }
+      EXPECT_TRUE(completed) << "failure sweep must reach a successful resize";
+    }
+  }
+}
+
 TEST(Hash, FailedCopyAssignmentLeavesBothTablesUsable) {
   auto a = memory(), b = memory();
   HashTable<int> source(a), destination(b);

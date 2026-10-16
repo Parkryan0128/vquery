@@ -34,6 +34,8 @@ struct Tables {
     }
     return *this;
   }
+  // Resize both tables. On allocation failure, rows and counts are unchanged;
+  // capacity reserved before the failure remains owned and budgeted.
   void allocate(std::size_t n, std::size_t m);
   void set_fact(std::size_t i, const FactRow &row);
   void set_customer(std::size_t i, const CustomerRow &row);

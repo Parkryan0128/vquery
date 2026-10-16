@@ -24,12 +24,20 @@ void Tables::allocate(std::size_t n, std::size_t m) {
     throw Error(ErrorCode::invalid_input, "table row limit exceeded");
   if (query != Query::join_group_sum && m)
     throw Error(ErrorCode::invalid_input, "dimension is only valid for Q3");
-  fact_count = n;
-  customer_count = m;
+  // Reserve every column before changing any size or discarding existing rows.
+  // A failed reserve may retain capacity, but leaves the table's contents intact.
   if (aos) {
+    facts.reserve(n);
+    customers.reserve(m);
     facts.resize(n);
     customers.resize(m);
   } else {
+    columns.customer_id.reserve(n);
+    columns.group_id.reserve(n);
+    columns.score.reserve(n);
+    columns.amount.reserve(n);
+    customer_keys.reserve(m);
+    regions.reserve(m);
     columns.customer_id.resize(n);
     columns.group_id.resize(n);
     columns.score.resize(n);
@@ -37,6 +45,8 @@ void Tables::allocate(std::size_t n, std::size_t m) {
     customer_keys.resize(m);
     regions.resize(m);
   }
+  fact_count = n;
+  customer_count = m;
 }
 void Tables::set_fact(std::size_t i, const FactRow &r) {
   if (aos)

@@ -271,6 +271,38 @@ class Summaries(unittest.TestCase):
             timed=True,
         )
 
+    def test_unchecked_all_pass_full_match_join_requires_every_fact(self):
+        config = {
+            **self.meta["config"],
+            "query": "join-group-sum",
+            "cutoff": 10000,
+            "dim_rows": 3,
+            "match_rate_bps": 10000,
+            "distribution": "uniform",
+        }
+        self.meta.update(
+            config=config, publication_eligible=False, validation_manifest=None, validation_id=None
+        )
+        for sample in self.samples:
+            sample.update(config)
+            sample.update(
+                selected_rows=None,
+                joined_rows=10,
+                result_rows=1,
+                validation_status="unchecked",
+                validation_id=None,
+            )
+        self.save()
+        self.assertEqual(len(load_run(self.path, True)[1]), 15)
+        for joined in (0, 1, 9):
+            with self.subTest(joined=joined):
+                for sample in self.samples:
+                    sample.update(joined_rows=joined, result_rows=0 if joined == 0 else 1)
+                self.save()
+                with self.assertRaisesRegex(ValueError, "full match rate"):
+                    load_run(self.path, True)
+                self.assertEqual(summarize(self.path.parent, True)[0], [])
+
     def test_statistics_and_stale_summary_removal(self):
         self.save()
         rows, errors = summarize(self.path.parent)

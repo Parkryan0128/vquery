@@ -71,6 +71,8 @@ The default managed-buffer limit is 4096 MiB. A counting allocator reserves byte
 
 The limit is not an RSS cap: thread stacks, small control objects, allocator bookkeeping, and Python/JSON memory are excluded. Query peaks reset only after previous result buffers have been released. Allocation failures produce errors, never partial success.
 
+`Tables::allocate` reserves all required capacity before resizing either table. If an allocation fails, existing rows and row counts remain valid for a retry or another query. Capacity acquired before the failure remains owned and charged to the budget until the table releases it. Resizing may invalidate borrowed views even when a later allocation fails; prepare or resize tables before opening operators.
+
 ## CLI options
 
 `--query` and `--engine` are required. Both executables support `--help`.

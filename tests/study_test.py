@@ -55,6 +55,21 @@ class Study(unittest.TestCase):
         )
         self.assertEqual(sum(len(rows) for rows in suites.values()), 201)
 
+    def test_optional_rss_can_be_missing_null_or_partially_available(self):
+        path = self.root / "core/0000.jsonl"
+        samples = [json.loads(line) for line in path.read_text().splitlines()]
+        for sample in samples:
+            sample.pop("process_peak_rss_bytes")
+        for available in (False, True):
+            with self.subTest(available=available):
+                samples[0]["process_peak_rss_bytes"] = None
+                if available:
+                    samples[-1]["process_peak_rss_bytes"] = 12345
+                path.write_text("".join(json.dumps(sample) + "\n" for sample in samples))
+                rows = self.load()[0]["core"]
+                self.assertEqual(rows[0]["process_peak_rss_bytes"], 12345 if available else None)
+                self.assertIsNotNone(rows[1]["process_peak_rss_bytes"])
+
     def test_reordered_and_repeated_manifest_cases_are_accepted(self):
         self.spec["cases"] = list(reversed(self.spec["cases"])) + self.spec["cases"]
         self.save_spec()
