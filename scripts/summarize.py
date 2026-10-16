@@ -188,9 +188,10 @@ def load_run(raw_path, include_exploratory=False):
     integer(meta.get("warmup"), "warmup")
     if meta.get("completion_state") != "complete" or meta.get("run_status") != "ok":
         raise ValueError("run failed or was not finalized")
+    # JSON strings may contain Unicode separators that str.splitlines treats as newlines.
     samples = [
         decode_record(line)
-        for line in raw_path.read_text(encoding="utf-8").splitlines()
+        for line in raw_path.read_text(encoding="utf-8").split("\n")
         if line.strip()
     ]
     _validate_samples(meta, samples, meta_path.name)

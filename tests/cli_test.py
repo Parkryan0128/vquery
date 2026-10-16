@@ -480,6 +480,39 @@ class Contracts(unittest.TestCase):
             self.assertGreaterEqual(meta["repetitions_in_sample"], 1)
             self.assertEqual(samples[0]["metadata_path"], output.name + ".meta.json")
 
+    def test_unicode_line_separators_in_benchmark_filenames(self):
+        with tempfile.TemporaryDirectory() as directory:
+            for separator in ("\u0085", "\u2028", "\u2029"):
+                with self.subTest(separator=hex(ord(separator))):
+                    output = Path(directory) / f"run{separator}name.jsonl"
+                    invoke(
+                        BENCH,
+                        "--query",
+                        "filter-sum",
+                        "--engine",
+                        "batch-soa",
+                        "--rows",
+                        17,
+                        "--warmup",
+                        0,
+                        "--repetitions",
+                        2,
+                        "--output",
+                        output,
+                    )
+                    # These characters are valid within JSON strings, not record delimiters.
+                    lines = output.read_bytes().split(b"\n")
+                    self.assertEqual(len(lines), 3)
+                    self.assertEqual(lines[-1], b"")
+                    expected = [json.loads(line) for line in lines[:-1]]
+                    for ending in (b"\n", b"\r\n"):
+                        with self.subTest(ending=ending):
+                            output.write_bytes(ending.join(lines))
+                            meta, samples, eligible = load_run(output, True)
+                            self.assertEqual(meta["completion_state"], "complete")
+                            self.assertEqual(samples, expected)
+                            self.assertFalse(eligible)
+
     def test_budget_failure_and_existing_output_are_not_successful_runs(self):
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory) / "run.jsonl"
